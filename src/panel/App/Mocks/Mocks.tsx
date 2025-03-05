@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import { ActionIcon, Flex, Switch } from "@mantine/core";
 import { TableSchema, TableWrapper } from "../Blocks/Table";
 import { IMockResponse } from "@mokku/types";
@@ -49,25 +49,30 @@ const getSchema = ({
     header: "Name",
     content: (data) => data.name,
     width: 240,
+    sortKey: "name",
   },
   {
     header: "Method",
     content: (data) => data.method,
     width: 100,
+    sortKey: "method",
   },
   {
     header: "URL",
     content: (data) => data.url,
+    sortKey: "url",
   },
   {
     header: "Status",
     content: (data) => data.status,
     width: 80,
+    sortKey: "status",
   },
   {
     header: "Delay",
     content: (data) => data.delay,
     width: 120,
+    sortKey: "delay",
   },
   {
     header: "",
@@ -124,6 +129,8 @@ export const Mocks = () => {
     shallow,
   );
   const search = useGlobalStore((state) => state.search).toLowerCase();
+  const [sortKey, setSortKey] = useState<keyof IMockResponse | undefined>(undefined);
+  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
 
   const { deleteMock, duplicateMock, toggleMock, editMock } = useMockActions();
 
@@ -141,6 +148,34 @@ export const Mocks = () => {
       (mock?.method || "").toLowerCase().includes(search) ||
       (mock?.status || "").toString().includes(search),
   );
+
+  const sortedMocks = React.useMemo(() => {
+    if (!sortKey) return filteredMocks;
+
+    return [...filteredMocks].sort((a, b) => {
+      const aValue = a[sortKey];
+      const bValue = b[sortKey];
+
+      if (aValue === undefined || bValue === undefined) return 0;
+
+      // Handle different types of values
+      let comparison = 0;
+      if (typeof aValue === 'string' && typeof bValue === 'string') {
+        comparison = aValue.localeCompare(bValue);
+      } else if (typeof aValue === 'number' && typeof bValue === 'number') {
+        comparison = aValue - bValue;
+      } else {
+        comparison = String(aValue).localeCompare(String(bValue));
+      }
+
+      return sortDirection === 'asc' ? comparison : -comparison;
+    });
+  }, [filteredMocks, sortKey, sortDirection]);
+
+  const handleSort = (key: keyof IMockResponse, direction: 'asc' | 'desc') => {
+    setSortKey(key);
+    setSortDirection(direction);
+  };
 
   if (store.mocks.length === 0) {
     return (
@@ -164,8 +199,11 @@ export const Mocks = () => {
     <TableWrapper
       onRowClick={(data) => setSelectedMock(data)}
       selectedRowId={selectedMock?.id}
-      data={filteredMocks}
+      data={sortedMocks}
       schema={schema}
+      onSort={handleSort}
+      sortKey={sortKey}
+      sortDirection={sortDirection}
     />
   );
 };

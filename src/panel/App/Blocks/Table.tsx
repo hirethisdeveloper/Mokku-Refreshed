@@ -7,6 +7,7 @@ export type TableSchema<T> = Array<{
   minWidth?: number;
   maxWidth?: number;
   width?: number;
+  sortKey?: keyof T;
 }>;
 
 export interface TableWrapperProps<T> {
@@ -14,6 +15,9 @@ export interface TableWrapperProps<T> {
   data: T[];
   onRowClick?: (data: T) => void;
   selectedRowId?: number | string;
+  onSort?: (sortKey: keyof T, direction: 'asc' | 'desc') => void;
+  sortKey?: keyof T;
+  sortDirection?: 'asc' | 'desc';
 }
 
 const useStyles = createStyles((theme) => ({
@@ -52,18 +56,41 @@ export const TableWrapper = <T extends unknown & { id: string | number }>({
   data,
   onRowClick,
   selectedRowId,
+  onSort,
+  sortKey,
+  sortDirection,
 }: TableWrapperProps<T>) => {
   const { classes } = useStyles();
 
+  const handleHeaderClick = (header: TableSchema<T>[0]) => {
+    if (!header.sortKey || !onSort) return;
+    
+    const newDirection = 
+      sortKey === header.sortKey && sortDirection === 'asc' ? 'desc' : 'asc';
+    
+    onSort(header.sortKey, newDirection);
+  };
+
   const ths = (
     <tr>
-      {schema.map(({ header, minWidth, maxWidth, width }, index) => (
+      {schema.map(({ header, minWidth, maxWidth, width, sortKey: headerSortKey }, index) => (
         <th
-          style={{ minWidth, maxWidth, width }}
+          style={{ 
+            minWidth, 
+            maxWidth, 
+            width,
+            cursor: headerSortKey ? 'pointer' : 'default'
+          }}
           key={index}
           className={classes.th}
+          onClick={() => handleHeaderClick(schema[index])}
         >
           {header}
+          {headerSortKey && sortKey === headerSortKey && (
+            <span style={{ marginLeft: '5px' }}>
+              {sortDirection === 'asc' ? '↑' : '↓'}
+            </span>
+          )}
         </th>
       ))}
     </tr>
