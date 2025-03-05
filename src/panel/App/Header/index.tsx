@@ -14,6 +14,7 @@ import { RefreshButton } from "./RefreshButton";
 import { ClearButton } from "./ClearButton";
 import { RecordButton } from "./RecordButton";
 import { FilterNon200Button } from "./FilterNon200Button";
+import { ImportExportButton } from "./ImportExportButton";
 import { SwitchButton } from "./SwitchButton";
 import { SupportUs } from "./SupportUs";
 
@@ -57,6 +58,7 @@ export const Header = () => {
               />
               <RecordButton />
               {view === ViewEnum.MOCKS && <FilterNon200Button />}
+              <ImportExportButton />
               {view === "LOGS" ? <ClearButton /> : null}
             </Flex>
           </Flex>
