@@ -162,7 +162,9 @@ export const Mocks = () => {
         (mock?.name || "").toLowerCase().includes(search) ||
         (mock?.url || "").toLowerCase().includes(search) ||
         (mock?.method || "").toLowerCase().includes(search) ||
-        (mock?.status || "").toString().includes(search);
+        (mock?.status || "").toString().includes(search) ||
+        // Search in tags
+        (mock?.tags || []).some(tag => tag.toLowerCase().includes(search));
       
       // Then apply the non-200 filter if enabled
       if (filterNon200) {
@@ -214,7 +216,7 @@ export const Mocks = () => {
     return (
       <Placeholder
         title="No matched mock."
-        description="No mock is matching the current search, you can search by name, url, method or status."
+        description="No mock is matching the current search, you can search by name, url, method, status, or tags."
       />
     );
   }
