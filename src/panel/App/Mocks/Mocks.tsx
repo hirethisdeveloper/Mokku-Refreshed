@@ -129,6 +129,7 @@ export const Mocks = () => {
     shallow,
   );
   const search = useGlobalStore((state) => state.search).toLowerCase();
+  const filterNon200 = useGlobalStore((state) => state.filterNon200);
   const [sortKey, setSortKey] = useState<keyof IMockResponse | undefined>(undefined);
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
 
@@ -142,11 +143,21 @@ export const Mocks = () => {
   });
 
   const filteredMocks = store.mocks.filter(
-    (mock) =>
-      (mock?.name || "").toLowerCase().includes(search) ||
-      (mock?.url || "").toLowerCase().includes(search) ||
-      (mock?.method || "").toLowerCase().includes(search) ||
-      (mock?.status || "").toString().includes(search),
+    (mock) => {
+      // First apply the search filter
+      const matchesSearch = 
+        (mock?.name || "").toLowerCase().includes(search) ||
+        (mock?.url || "").toLowerCase().includes(search) ||
+        (mock?.method || "").toLowerCase().includes(search) ||
+        (mock?.status || "").toString().includes(search);
+      
+      // Then apply the non-200 filter if enabled
+      if (filterNon200) {
+        return matchesSearch && mock.status !== 200;
+      }
+      
+      return matchesSearch;
+    }
   );
 
   const sortedMocks = React.useMemo(() => {
