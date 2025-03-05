@@ -10,3 +10,6 @@ ionic
 mobile_build
 dist.pem
 dist.crx
+old.json
+migrated-mocks.json
+mokku-store-backup.json

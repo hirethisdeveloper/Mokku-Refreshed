@@ -3,6 +3,7 @@ import { ColorScheme, Flex } from "@mantine/core";
 import { Show } from "./Blocks/Show";
 import { Mocks } from "./Mocks/Mocks";
 import { Logs } from "./Logs/Logs";
+import { ImportExport } from "./ImportExport/ImportExport";
 import { usePanelListener } from "./hooks/usePanelListner";
 import { DisabledPlaceholder } from "./DisabledPlaceholder/DisabledPlaceholder";
 
@@ -54,6 +55,9 @@ export const App = (props: useGlobalStoreState["meta"]) => {
           </Show>
           <Show if={view === ViewEnum.LOGS}>
             <Logs />
+          </Show>
+          <Show if={view === ViewEnum.IMPORT_EXPORT}>
+            <ImportExport />
           </Show>
         </div>
       </Flex>

@@ -3,10 +3,11 @@ import { create } from "zustand";
 export enum ViewEnum {
   MOCKS = "MOCKS",
   LOGS = "LOGS",
+  IMPORT_EXPORT = "IMPORT_EXPORT",
 }
 
 export type useGlobalStoreState = {
-  view: "MOCKS" | "LOGS";
+  view: "MOCKS" | "LOGS" | "IMPORT_EXPORT";
   setView: (view: ViewEnum) => void;
   search: string;
   setSearch: (search: string) => void;
