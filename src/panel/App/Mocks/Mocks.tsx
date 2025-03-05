@@ -157,23 +157,57 @@ export const Mocks = () => {
 
   const filteredMocks = store.mocks.filter(
     (mock) => {
-      // First apply the search filter
-      const matchesSearch = 
-        (mock?.name || "").toLowerCase().includes(search) ||
-        (mock?.url || "").toLowerCase().includes(search) ||
-        (mock?.method || "").toLowerCase().includes(search) ||
-        (mock?.status || "").toString().includes(search) ||
-        // Search in tags
-        (mock?.tags || []).some(tag => tag.toLowerCase().includes(search));
+      // If search is empty, return all mocks
+      if (!search) return true;
       
-      // Then apply the non-200 filter if enabled
-      if (filterNon200) {
-        return matchesSearch && mock.status !== 200;
+      // Check if search is using field:value format
+      const colonIndex = search.indexOf(':');
+      if (colonIndex > 0) {
+        const field = search.substring(0, colonIndex).trim().toLowerCase();
+        const value = search.substring(colonIndex + 1).trim().toLowerCase();
+        
+        // Return all mocks if value is empty
+        if (!value) return true;
+        
+        // Filter based on the specified field
+        switch (field) {
+          case 'name':
+            return (mock?.name || "").toLowerCase().includes(value);
+          case 'url':
+            return (mock?.url || "").toLowerCase().includes(value);
+          case 'tags':
+            return (mock?.tags || []).some(tag => tag.toLowerCase().includes(value));
+          case 'status':
+            return (mock?.status || "").toString().toLowerCase().includes(value);
+          case 'delay':
+            return (mock?.delay || "").toString().toLowerCase().includes(value);
+          case 'method':
+            return (mock?.method || "").toLowerCase().includes(value);
+          default:
+            // If field is not recognized, perform regular search
+            return (mock?.name || "").toLowerCase().includes(search) ||
+                   (mock?.url || "").toLowerCase().includes(search) ||
+                   (mock?.method || "").toLowerCase().includes(search) ||
+                   (mock?.status || "").toString().includes(search) ||
+                   (mock?.tags || []).some(tag => tag.toLowerCase().includes(search));
+        }
       }
       
-      return matchesSearch;
+      // Regular search (no field:value format)
+      return (mock?.name || "").toLowerCase().includes(search) ||
+             (mock?.url || "").toLowerCase().includes(search) ||
+             (mock?.method || "").toLowerCase().includes(search) ||
+             (mock?.status || "").toString().includes(search) ||
+             // Search in tags
+             (mock?.tags || []).some(tag => tag.toLowerCase().includes(search));
     }
-  );
+  ).filter(mock => {
+    // Apply the non-200 filter if enabled
+    if (filterNon200) {
+      return mock.status !== 200;
+    }
+    return true;
+  });
 
   const sortedMocks = React.useMemo(() => {
     if (!sortKey) return filteredMocks;
@@ -216,7 +250,7 @@ export const Mocks = () => {
     return (
       <Placeholder
         title="No matched mock."
-        description="No mock is matching the current search, you can search by name, url, method, status, or tags."
+        description="No mock is matching the current search. Try searching by name, url, method, status, or tags. You can also use field:value format (e.g., tags:dashboard)."
       />
     );
   }
