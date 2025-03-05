@@ -23,13 +23,13 @@ export const App = (props: useGlobalStoreState["meta"]) => {
   const setMeta = useGlobalStore((state) => state.setMeta);
   const view = useGlobalStore((state) => state.view);
 
-  const [colorScheme, setColorScheme] = useState<ColorScheme>("light");
+  const [colorScheme, setColorScheme] = useState<ColorScheme>("dark");
   const initMockStore = useChromeStore((state) => state.init);
 
   useEffect(() => {
     initMockStore();
     setMeta(props);
-    const theme = (localStorage.getItem("theme") || "light") as ColorScheme;
+    const theme = (localStorage.getItem("theme") || "dark") as ColorScheme;
     setColorScheme(theme);
   }, []);
 

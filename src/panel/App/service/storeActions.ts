@@ -19,7 +19,7 @@ const getNetworkMethodMap = () => ({
 const storeName = "mokku.extension.main.db";
 
 export const getDefaultStore = (): IStore => ({
-  theme: "light",
+  theme: "dark",
   active: false,
   mocks: [],
   totalMocksCreated: 0,
