@@ -66,7 +66,7 @@ const getSchema = ({
     header: "Tags",
     content: (data) => (
       <Group spacing={4}>
-        {data.tags?.map((tag, index) => (
+        {data.tags?.slice().sort((a, b) => a.localeCompare(b)).map((tag, index) => (
           <Badge key={index} size="xs" variant="light">
             {tag}
           </Badge>
