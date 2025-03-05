@@ -13,6 +13,7 @@ import { ThemeButton } from "./ThemeButton";
 import { RefreshButton } from "./RefreshButton";
 import { ClearButton } from "./ClearButton";
 import { RecordButton } from "./RecordButton";
+import { FilterNon200Button } from "./FilterNon200Button";
 import { SwitchButton } from "./SwitchButton";
 import { SupportUs } from "./SupportUs";
 
@@ -55,6 +56,7 @@ export const Header = () => {
                 onChange={(event) => setSearch(event.target.value)}
               />
               <RecordButton />
+              {view === ViewEnum.MOCKS && <FilterNon200Button />}
               {view === "LOGS" ? <ClearButton /> : null}
             </Flex>
           </Flex>
