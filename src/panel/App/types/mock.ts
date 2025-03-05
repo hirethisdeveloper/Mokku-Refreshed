@@ -50,6 +50,7 @@ export interface IMockResponse {
   active: boolean;
   description: string;
   tags?: string[];
+  project?: string;
   action?: (req: {
     body: Record<string, any>;
     params: Record<string, any>;
