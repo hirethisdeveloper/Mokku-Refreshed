@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { ActionIcon, Flex, Switch } from "@mantine/core";
+import { ActionIcon, Flex, Switch, Badge, Group } from "@mantine/core";
 import { TableSchema, TableWrapper } from "../Blocks/Table";
 import { IMockResponse } from "@mokku/types";
 import { useGlobalStore, useChromeStore, useChromeStoreState } from "../store";
@@ -61,6 +61,19 @@ const getSchema = ({
     header: "URL",
     content: (data) => data.url,
     sortKey: "url",
+  },
+  {
+    header: "Tags",
+    content: (data) => (
+      <Group spacing={4}>
+        {data.tags?.map((tag, index) => (
+          <Badge key={index} size="xs" variant="light">
+            {tag}
+          </Badge>
+        ))}
+      </Group>
+    ),
+    width: 200,
   },
   {
     header: "Status",
