@@ -10,6 +10,7 @@ import {
   TextInput,
   Title,
   JsonInput,
+  MultiSelect,
 } from "@mantine/core";
 import { v4 as uuidv4 } from "uuid";
 import React from "react";
@@ -70,6 +71,27 @@ export const AddMockForm = ({
   } = useStyles();
   const tab = useGlobalStore((state) => state.meta.tab);
 
+  // Get all unique tags from existing mocks
+  const existingTags = React.useMemo(() => {
+    const allTags = [];
+    store.mocks.forEach(mock => {
+      if (mock.tags && mock.tags.length > 0) {
+        mock.tags.forEach(tag => allTags.push(tag));
+      }
+    });
+    return [...new Set(allTags)];
+  }, [store.mocks]);
+
+  // Convert existing tags to MultiSelect data format
+  const [tagData, setTagData] = React.useState(() => 
+    existingTags.map(tag => ({ value: tag, label: tag }))
+  );
+
+  // Update tag data when existingTags changes
+  React.useEffect(() => {
+    setTagData(existingTags.map(tag => ({ value: tag, label: tag })));
+  }, [existingTags]);
+
   const form = useForm<IMockResponseRaw>({
     initialValues: {
       headers: [],
@@ -77,12 +99,31 @@ export const AddMockForm = ({
       delay: 500,
       method: "GET",
       active: true,
+      tags: [],
       ...selectedMock,
     },
   });
+
+  // Ensure form.values.tags is always an array
+  React.useEffect(() => {
+    if (!form.values.tags) {
+      form.setFieldValue('tags', []);
+    }
+  }, [form.values.tags]);
+
   const isNewMock = !selectedMock.id;
   const response = form.values["response"];
   const jsonValid = response ? isJsonValid(response) : true;
+
+  // Validate tags to not contain special characters
+  const validateTag = (tag: string) => {
+    return /^[a-zA-Z0-9\s]+$/.test(tag) ? null : 'Tags cannot contain special characters';
+  };
+
+  // Log form values for debugging
+  React.useEffect(() => {
+    console.log('Form values:', form.values);
+  }, [form.values]);
 
   return (
     <form
@@ -172,6 +213,29 @@ export const AddMockForm = ({
                 label="Description"
                 placeholder="Success case for goals API"
                 {...form.getInputProps("description")}
+              />
+            </Flex>
+            <Flex gap={12} align="center">
+              <MultiSelect
+                className={flexGrow}
+                label="Tags"
+                placeholder="Add tags"
+                data={tagData}
+                searchable
+                clearable
+                creatable
+                getCreateLabel={(query) => `+ Create ${query}`}
+                onCreate={(query) => {
+                  const isValid = validateTag(query);
+                  if (isValid === null) {
+                    const newItem = { value: query, label: query };
+                    setTagData(prev => [...prev, newItem]);
+                    return newItem;
+                  }
+                  return null;
+                }}
+                value={form.values.tags || []}
+                onChange={(value) => form.setFieldValue('tags', value)}
               />
             </Flex>
             <Flex gap={12} align="center">

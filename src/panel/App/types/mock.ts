@@ -49,6 +49,7 @@ export interface IMockResponse {
   dynamic?: boolean;
   active: boolean;
   description: string;
+  tags?: string[];
   action?: (req: {
     body: Record<string, any>;
     params: Record<string, any>;
