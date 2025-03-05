@@ -51,7 +51,7 @@ export const Header = () => {
               </Button>
               <Input
                 icon={<TbSearch />}
-                placeholder="Search..."
+                placeholder="Search or use field:value (e.g., tags:dashboard)"
                 size="xs"
                 defaultValue={search}
                 onChange={(event) => setSearch(event.target.value)}
