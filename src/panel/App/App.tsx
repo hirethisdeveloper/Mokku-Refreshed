@@ -4,6 +4,7 @@ import { Show } from "./Blocks/Show";
 import { Mocks } from "./Mocks/Mocks";
 import { Logs } from "./Logs/Logs";
 import { ImportExport } from "./ImportExport/ImportExport";
+import { Projects } from "./Projects";
 import { usePanelListener } from "./hooks/usePanelListner";
 import { DisabledPlaceholder } from "./DisabledPlaceholder/DisabledPlaceholder";
 
@@ -50,6 +51,9 @@ export const App = (props: useGlobalStoreState["meta"]) => {
       >
         <Header />
         <div style={{ overflow: "auto", flexGrow: 2 }}>
+          <Show if={view === ViewEnum.PROJECTS}>
+            <Projects />
+          </Show>
           <Show if={view === ViewEnum.MOCKS}>
             <Mocks />
           </Show>

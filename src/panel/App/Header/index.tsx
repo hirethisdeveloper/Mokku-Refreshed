@@ -34,10 +34,11 @@ export const Header = () => {
   const [showSupportUs, setShowSupportUs] = useState(false);
 
   return (
-    <Tabs defaultValue={ViewEnum.MOCKS} value={view} onTabChange={setView}>
+    <Tabs value={view} onTabChange={setView}>
       <Tabs.List style={{ width: "100%" }}>
         <Flex justify="space-between" align="center" style={{ width: "100%" }}>
           <Flex align="center">
+            <Tabs.Tab value={ViewEnum.PROJECTS}>Projects</Tabs.Tab>
             <Tabs.Tab value={ViewEnum.MOCKS}>Mocks</Tabs.Tab>
             <Tabs.Tab value={ViewEnum.LOGS}>Logs</Tabs.Tab>
             <Flex align="center" gap={8}>

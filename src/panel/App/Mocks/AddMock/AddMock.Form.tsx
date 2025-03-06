@@ -102,9 +102,24 @@ export const AddMockForm = ({
   );
 
   // Convert existing projects to Select data format
-  const [projectData, setProjectData] = React.useState(() => 
-    existingProjects.map(project => ({ value: project, label: project }))
-  );
+  const [projectData, setProjectData] = React.useState<Array<{ value: string; label: string }>>(() => {
+    // Get all projects from mocks
+    const allProjects = [];
+    store.mocks.forEach(mock => {
+      if (mock.project && mock.project.trim() !== '') {
+        allProjects.push(mock.project);
+      }
+    });
+    
+    // Deduplicate projects
+    const uniqueProjects = [...new Set(allProjects)].sort();
+    
+    // Format projects for the Select component
+    return uniqueProjects.map(project => ({ 
+      value: project, 
+      label: project 
+    }));
+  });
 
   // Update tag data when existingTags changes
   React.useEffect(() => {
@@ -115,6 +130,36 @@ export const AddMockForm = ({
   React.useEffect(() => {
     setProjectData(existingProjects.map(project => ({ value: project, label: project })));
   }, [existingProjects]);
+
+  // Function to refresh project data from all mocks
+  const refreshProjectData = React.useCallback(() => {
+    // Get all projects from mocks
+    const allProjects = [];
+    
+    // Extract all projects from mocks
+    store.mocks.forEach(mock => {
+      if (mock.project && mock.project.trim() !== '') {
+        allProjects.push(mock.project);
+      }
+    });
+    
+    // Deduplicate projects
+    const uniqueProjects = [...new Set(allProjects)].sort();
+    
+    // Format projects for the Select component
+    const formattedProjects = uniqueProjects.map(project => ({ 
+      value: project, 
+      label: project 
+    }));
+    
+    // Update the state
+    setProjectData([...formattedProjects]);
+  }, [store.mocks]);
+
+  // Refresh project data when component mounts
+  React.useEffect(() => {
+    refreshProjectData();
+  }, [refreshProjectData]);
 
   const form = useForm<IMockResponseRaw>({
     initialValues: {
@@ -293,19 +338,36 @@ export const AddMockForm = ({
                     </Group>
                   ) : (
                     <Select
+                      key={`project-select-${projectData.length}`}
                       placeholder="Add project"
-                      data={projectData}
+                      data={projectData.length > 0 ? projectData : []}
                       searchable
                       clearable
                       creatable
+                      dropdownPosition="bottom"
+                      maxDropdownHeight={200}
+                      nothingFound="No projects found"
+                      onFocus={() => {
+                        refreshProjectData();
+                      }}
                       getCreateLabel={(query) => `+ Create ${query}`}
                       onCreate={(query) => {
                         const isValid = validateProject(query);
                         if (isValid === null) {
-                          const newItem = { value: query, label: query };
-                          setProjectData(prev => [...prev, newItem]);
-                          return newItem.value;
+                          // Check if project already exists
+                          if (!projectData.some(p => p.value === query)) {
+                            const newItem = { value: query, label: query };
+                            setProjectData(prev => [...prev, newItem]);
+                            return newItem.value;
+                          }
+                          return query; // Return existing project
                         }
+                        // Show notification for invalid project name
+                        notifications.show({
+                          title: "Invalid Project Name",
+                          message: isValid,
+                          color: "red",
+                        });
                         return null;
                       }}
                       value=""
