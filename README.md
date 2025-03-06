@@ -1,33 +1,43 @@
-# Important Update
+# Mokku Refreshed
 
-### Mokku is changing
-Mokku is in transiton form Panel based extention to full page dashboard. For more better ease of use and more features.
+## Features added in V3.0.0
 
-### GraphQL
-GraphQL support is next in the list.
+### Projects
 
-### Premium Version
-Ads free and exclusive features.
+Users can now create and manage different projects in the app. This will keep the user focused with mocks that are only relevant to the given project.
+- Create, rename, delete projects inside new Projects view
+- Filter mocks by project with new project select box in app nav bar
+- Create and add project names to mocks in add/update mock view
+  
+### Import / Export
 
+Users can now import and export their mocks database for sharing. This will help keep team members in sync with mocks.
+- New Import/Export icon button added to app nav bar
+- New Import/Export view screen added
+- Can import json mocks db from disk or from remote url
+- Can export mocks db to json file on disk
 
+### Tagging
+Users can now attatch multiple tags to mocks. This will assist in dialing in on what mocks are relevant to the user's workflow at the moment. 
+- New multi-select tags field added to add/update mock views
+- New Tags column added to main mocks dashboard table, tags appear as display pills
 
-# Mokku
+### Visual enhancements
+Several new visual improvements have been added as well:
+- New button in app nav bar that allows the user to toggle the view of all mocks or only non-200 status mocks
+- Search box now allows for specificity. The search box, by default, searches through many fields to produce a global search. Users can now use syntax to specify what field to search to find 
+  - name:api - Search for mocks with "api" in their name
+  - url:users - Search for mocks with "users" in their URL
+  - tags:dashboard - Search for mocks with the "dashboard" tag
+  - status:404 - Search for mocks with status code 404
+  - delay:1000 - Search for mocks with a delay of 1000ms
+  - method:GET - Search for GET mocks
+- Mocks dashboard table headers are now sortable (ascending/descending)
 
-> Mock API calls seamlessly
+  
 
-![small-promo](./docs/store/small-promo.png)
-
-[Chrome Web Store](https://chrome.google.com/webstore/detail/mokku-mock-api-calls-seam/llflfcikklhgamfmnjkgpdadpmdplmji?hl=en&authuser=1) | [MS Edge Add on](https://microsoftedge.microsoft.com/addons/detail/mokku-mock-api-calls-sea/ekcbmjnnnphonejedibidifflhljbobc)
-
-## Support
-
-Developing and maintaing the extenstion requires quite an effort! Cosnider supporting the extention!
-
-<a href="https://paypal.me/mukuljainx" title="Support Mokku using Paypal" target="_blank"><img src="https://www.paypalobjects.com/webstatic/mktg/Logo/pp-logo-150px.png" border="0" alt="PayPal Logo"></a>
-
-<a href="https://www.buymeacoffee.com/mukuljainx" target="_blank"><img src="https://cdn.buymeacoffee.com/buttons/default-orange.png" alt="Buy Me A Coffee" height="41" width="174"></a>
-
-**UPI Number:** 811721108 (this is not a mobile number but a UPI number)
+---
+## Past info, maintained for posterity
 
 
 ### About
@@ -43,8 +53,6 @@ Collections & Dynamic mock generators coming soon!
 You can submit issues, bugs or feature request at https://github.com/mukuljainx/mokku/issues
 
 This extension is development phase, might not work in some kind of response like md files.
-
-[Promotional Images](https://github.com/mukuljainx/Mokku/tree/master/docs/store)
 
 ### Features
 
@@ -89,5 +97,3 @@ Load `dist` directory. All the files are refreshed without extension reload exce
 ### Built on
 
 [Chitbat Chrome extension starter kit](https://github.com/chibat/chrome-extension-typescript-starter)
-
-<a style="margin-left: 16px" href="https://www.buymeacoffee.com/mukuljainx" target="_blank"><img src="https://cdn.buymeacoffee.com/buttons/v2/default-yellow.png" alt="Buy Me A Coffee" style="height: 52px !important;" ></a>
