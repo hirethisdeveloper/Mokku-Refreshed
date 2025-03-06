@@ -15,6 +15,7 @@ import { ClearButton } from "./ClearButton";
 import { RecordButton } from "./RecordButton";
 import { FilterNon200Button } from "./FilterNon200Button";
 import { ImportExportButton } from "./ImportExportButton";
+import { ProjectFilterButton } from "./ProjectFilterButton";
 import { SwitchButton } from "./SwitchButton";
 import { SupportUs } from "./SupportUs";
 
@@ -34,10 +35,11 @@ export const Header = () => {
   const [showSupportUs, setShowSupportUs] = useState(false);
 
   return (
-    <Tabs defaultValue={ViewEnum.MOCKS} value={view} onTabChange={setView}>
+    <Tabs value={view} onTabChange={setView}>
       <Tabs.List style={{ width: "100%" }}>
         <Flex justify="space-between" align="center" style={{ width: "100%" }}>
           <Flex align="center">
+            <Tabs.Tab value={ViewEnum.PROJECTS}>Projects</Tabs.Tab>
             <Tabs.Tab value={ViewEnum.MOCKS}>Mocks</Tabs.Tab>
             <Tabs.Tab value={ViewEnum.LOGS}>Logs</Tabs.Tab>
             <Flex align="center" gap={8}>
@@ -51,7 +53,7 @@ export const Header = () => {
               </Button>
               <Input
                 icon={<TbSearch />}
-                placeholder="Search or use field:value (e.g., tags:dashboard)"
+                placeholder="Search or use field:value (e.g., tags:dashboard, project:api)"
                 size="xs"
                 defaultValue={search}
                 onChange={(event) => setSearch(event.target.value)}
@@ -59,6 +61,7 @@ export const Header = () => {
               <RecordButton />
               {view === ViewEnum.MOCKS && <FilterNon200Button />}
               <ImportExportButton />
+              {view === ViewEnum.MOCKS && <ProjectFilterButton />}
               {view === "LOGS" ? <ClearButton /> : null}
             </Flex>
           </Flex>

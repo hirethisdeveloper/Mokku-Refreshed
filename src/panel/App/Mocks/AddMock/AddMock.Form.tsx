@@ -11,6 +11,9 @@ import {
   Title,
   JsonInput,
   MultiSelect,
+  Select,
+  Badge,
+  Group,
 } from "@mantine/core";
 import { v4 as uuidv4 } from "uuid";
 import React from "react";
@@ -82,15 +85,99 @@ export const AddMockForm = ({
     return [...new Set(allTags)];
   }, [store.mocks]);
 
+  // Get all unique projects from existing mocks
+  const existingProjects = React.useMemo(() => {
+    const allProjects = [];
+    store.mocks.forEach(mock => {
+      if (mock.project) {
+        allProjects.push(mock.project);
+      }
+    });
+    return [...new Set(allProjects)];
+  }, [store.mocks]);
+
   // Convert existing tags to MultiSelect data format
   const [tagData, setTagData] = React.useState(() => 
     existingTags.map(tag => ({ value: tag, label: tag }))
   );
 
+  // Convert existing projects to Select data format
+  const [projectData, setProjectData] = React.useState<Array<{ value: string; label: string }>>(() => {
+    // Get all projects from mocks
+    const allProjects = [];
+    store.mocks.forEach(mock => {
+      if (mock.project && mock.project.trim() !== '') {
+        allProjects.push(mock.project);
+      }
+    });
+    
+    // Get projects from store
+    if (store.projects) {
+      store.projects.forEach(project => {
+        if (project && project.trim() !== '') {
+          allProjects.push(project);
+        }
+      });
+    }
+    
+    // Deduplicate projects
+    const uniqueProjects = [...new Set(allProjects)].sort();
+    
+    // Format projects for the Select component
+    return uniqueProjects.map(project => ({ 
+      value: project, 
+      label: project 
+    }));
+  });
+
   // Update tag data when existingTags changes
   React.useEffect(() => {
     setTagData(existingTags.map(tag => ({ value: tag, label: tag })));
   }, [existingTags]);
+
+  // Update project data when existingProjects changes
+  React.useEffect(() => {
+    setProjectData(existingProjects.map(project => ({ value: project, label: project })));
+  }, [existingProjects]);
+
+  // Function to refresh project data from all mocks
+  const refreshProjectData = React.useCallback(() => {
+    // Get all projects from mocks
+    const allProjects = [];
+    
+    // Extract all projects from mocks
+    store.mocks.forEach(mock => {
+      if (mock.project && mock.project.trim() !== '') {
+        allProjects.push(mock.project);
+      }
+    });
+    
+    // Get projects from store
+    if (store.projects) {
+      store.projects.forEach(project => {
+        if (project && project.trim() !== '') {
+          allProjects.push(project);
+        }
+      });
+    }
+    
+    // Deduplicate projects
+    const uniqueProjects = [...new Set(allProjects)].sort();
+    
+    // Format projects for the Select component
+    const formattedProjects = uniqueProjects.map(project => ({ 
+      value: project, 
+      label: project 
+    }));
+    
+    // Update the state
+    setProjectData([...formattedProjects]);
+  }, [store.mocks, store.projects]);
+
+  // Refresh project data when component mounts
+  React.useEffect(() => {
+    refreshProjectData();
+  }, [refreshProjectData]);
 
   const form = useForm<IMockResponseRaw>({
     initialValues: {
@@ -100,6 +187,7 @@ export const AddMockForm = ({
       method: "GET",
       active: true,
       tags: [],
+      project: "",
       ...selectedMock,
     },
   });
@@ -118,6 +206,11 @@ export const AddMockForm = ({
   // Validate tags to not contain special characters
   const validateTag = (tag: string) => {
     return /^[a-zA-Z0-9\s]+$/.test(tag) ? null : 'Tags cannot contain special characters';
+  };
+
+  // Validate project to not contain special characters
+  const validateProject = (project: string) => {
+    return /^[a-zA-Z0-9\s]+$/.test(project) ? null : 'Project cannot contain special characters';
   };
 
   // Log form values for debugging
@@ -237,6 +330,92 @@ export const AddMockForm = ({
                 value={form.values.tags || []}
                 onChange={(value) => form.setFieldValue('tags', value)}
               />
+            </Flex>
+            <Flex gap={12} align="center">
+              <Flex direction="column" className={flexGrow}>
+                <Text size="sm" weight={500} mb={4}>Project</Text>
+                <Flex direction="column" gap={8}>
+                  {form.values.project ? (
+                    <Group spacing={4} mb={8}>
+                      <Badge size="md" variant="filled" color="blue" styles={{
+                        root: {
+                          paddingRight: 8
+                        }
+                      }}>
+                        {form.values.project}
+                        <span 
+                          style={{ marginLeft: 8, cursor: 'pointer' }} 
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            form.setFieldValue('project', '');
+                          }}
+                        >
+                          ×
+                        </span>
+                      </Badge>
+                    </Group>
+                  ) : (
+                    <Select
+                      key={`project-select-${projectData.length}`}
+                      placeholder="Add project"
+                      data={projectData.length > 0 ? projectData : []}
+                      searchable
+                      clearable
+                      creatable
+                      dropdownPosition="bottom"
+                      maxDropdownHeight={200}
+                      nothingFound="No projects found"
+                      onFocus={() => {
+                        refreshProjectData();
+                      }}
+                      getCreateLabel={(query) => `+ Create ${query}`}
+                      onCreate={(query) => {
+                        const isValid = validateProject(query);
+                        if (isValid === null) {
+                          // Check if project already exists
+                          if (!projectData.some(p => p.value === query)) {
+                            const newItem = { value: query, label: query };
+                            
+                            // Add to local state
+                            setProjectData(prev => [...prev, newItem]);
+                            
+                            // Add to store
+                            const updatedProjects = [...(store.projects || []), query];
+                            const updatedStore = { ...store, projects: updatedProjects };
+                            
+                            storeActions
+                              .updateStoreInDB(updatedStore)
+                              .then(setStoreProperties)
+                              .then(() => {
+                                storeActions.refreshContentStore(tab.id);
+                              })
+                              .catch((error) => {
+                                console.error(error);
+                                notifications.show({
+                                  title: "Error",
+                                  message: "Failed to add project to store",
+                                  color: "red",
+                                });
+                              });
+                            
+                            return newItem.value;
+                          }
+                          return query; // Return existing project
+                        }
+                        // Show notification for invalid project name
+                        notifications.show({
+                          title: "Invalid Project Name",
+                          message: isValid,
+                          color: "red",
+                        });
+                        return null;
+                      }}
+                      value=""
+                      onChange={(value) => form.setFieldValue('project', value)}
+                    />
+                  )}
+                </Flex>
+              </Flex>
             </Flex>
             <Flex gap={12} align="center">
               <TextInput

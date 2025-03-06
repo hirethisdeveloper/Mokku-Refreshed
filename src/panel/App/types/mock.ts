@@ -50,6 +50,7 @@ export interface IMockResponse {
   active: boolean;
   description: string;
   tags?: string[];
+  project?: string;
   action?: (req: {
     body: Record<string, any>;
     params: Record<string, any>;
@@ -64,6 +65,7 @@ export interface IStore {
   theme: "dark" | "light";
   mocks: IMockResponse[];
   totalMocksCreated: number;
+  projects: string[];
   activityInfo: {
     promoted: boolean;
   };

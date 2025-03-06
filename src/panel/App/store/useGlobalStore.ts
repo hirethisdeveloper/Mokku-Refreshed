@@ -1,13 +1,14 @@
 import { create } from "zustand";
 
 export enum ViewEnum {
+  PROJECTS = "PROJECTS",
   MOCKS = "MOCKS",
   LOGS = "LOGS",
   IMPORT_EXPORT = "IMPORT_EXPORT",
 }
 
 export type useGlobalStoreState = {
-  view: "MOCKS" | "LOGS" | "IMPORT_EXPORT";
+  view: "PROJECTS" | "MOCKS" | "LOGS" | "IMPORT_EXPORT";
   setView: (view: ViewEnum) => void;
   search: string;
   setSearch: (search: string) => void;
@@ -15,6 +16,8 @@ export type useGlobalStoreState = {
   toggleRecording: () => void;
   filterNon200: boolean;
   toggleFilterNon200: () => void;
+  projectFilter: string | null;
+  setProjectFilter: (project: string | null) => void;
   meta: {
     host: string;
     tab?: chrome.tabs.Tab;
@@ -34,6 +37,8 @@ export const useGlobalStore = create<useGlobalStoreState>((set, get) => ({
   recording: false,
   filterNon200: false,
   toggleFilterNon200: () => set({ filterNon200: !get().filterNon200 }),
+  projectFilter: null,
+  setProjectFilter: (project: string | null) => set({ projectFilter: project }),
   meta: {
     active: false,
     host: "",
