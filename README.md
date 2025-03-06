@@ -48,20 +48,12 @@ Mokku adds itself as a tab in dev tools as a panel. In the tab user can see netw
 
 All URL's are accessible but Mokku doesn't inject scripts into any pages apart from which are served locally and accessed using 'http://localhost\*' until enabled from the Panel.
 
-Collections & Dynamic mock generators coming soon!
-
-You can submit issues, bugs or feature request at https://github.com/mukuljainx/mokku/issues
-
 This extension is development phase, might not work in some kind of response like md files.
 
 ### Features
 
 1. Mock API call, specify JSON body, status, time delay and even headers 🙌.
 2. **Wild Card:** add `(.*)` as wild card in url which will match anything, for example: `some-domain/user/(.*)/messages`. This will match `some-domain/user/u1/messages` and `some-domain/user/u2/messages` too.
-
-### GraphQL
-
-Mokku doesn't support GraphQL as of now.
 
 ### Privacy policy
 
