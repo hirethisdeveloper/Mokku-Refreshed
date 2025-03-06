@@ -16,6 +16,8 @@ export type useGlobalStoreState = {
   toggleRecording: () => void;
   filterNon200: boolean;
   toggleFilterNon200: () => void;
+  projectFilter: string | null;
+  setProjectFilter: (project: string | null) => void;
   meta: {
     host: string;
     tab?: chrome.tabs.Tab;
@@ -35,6 +37,8 @@ export const useGlobalStore = create<useGlobalStoreState>((set, get) => ({
   recording: false,
   filterNon200: false,
   toggleFilterNon200: () => set({ filterNon200: !get().filterNon200 }),
+  projectFilter: null,
+  setProjectFilter: (project: string | null) => set({ projectFilter: project }),
   meta: {
     active: false,
     host: "",

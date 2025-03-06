@@ -143,6 +143,7 @@ export const Mocks = () => {
   );
   const search = useGlobalStore((state) => state.search).toLowerCase();
   const filterNon200 = useGlobalStore((state) => state.filterNon200);
+  const projectFilter = useGlobalStore((state) => state.projectFilter);
   const [sortKey, setSortKey] = useState<keyof IMockResponse | undefined>(undefined);
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
 
@@ -177,6 +178,8 @@ export const Mocks = () => {
             return (mock?.url || "").toLowerCase().includes(value);
           case 'tags':
             return (mock?.tags || []).some(tag => tag.toLowerCase().includes(value));
+          case 'project':
+            return (mock?.project || "").toLowerCase().includes(value);
           case 'status':
             return (mock?.status || "").toString().toLowerCase().includes(value);
           case 'delay':
@@ -189,6 +192,7 @@ export const Mocks = () => {
                    (mock?.url || "").toLowerCase().includes(search) ||
                    (mock?.method || "").toLowerCase().includes(search) ||
                    (mock?.status || "").toString().includes(search) ||
+                   (mock?.project || "").toLowerCase().includes(search) ||
                    (mock?.tags || []).some(tag => tag.toLowerCase().includes(search));
         }
       }
@@ -198,6 +202,7 @@ export const Mocks = () => {
              (mock?.url || "").toLowerCase().includes(search) ||
              (mock?.method || "").toLowerCase().includes(search) ||
              (mock?.status || "").toString().includes(search) ||
+             (mock?.project || "").toLowerCase().includes(search) ||
              // Search in tags
              (mock?.tags || []).some(tag => tag.toLowerCase().includes(search));
     }
@@ -205,6 +210,12 @@ export const Mocks = () => {
     // Apply the non-200 filter if enabled
     if (filterNon200) {
       return mock.status !== 200;
+    }
+    return true;
+  }).filter(mock => {
+    // Apply the project filter if selected
+    if (projectFilter) {
+      return mock.project === projectFilter;
     }
     return true;
   });
@@ -250,7 +261,7 @@ export const Mocks = () => {
     return (
       <Placeholder
         title="No matched mock."
-        description="No mock is matching the current search. Try searching by name, url, method, status, or tags. You can also use field:value format (e.g., tags:dashboard)."
+        description="No mock is matching the current search or filter. Try searching by name, url, method, status, tags, or project. You can also use field:value format (e.g., tags:dashboard, project:api) or use the project filter dropdown."
       />
     );
   }
