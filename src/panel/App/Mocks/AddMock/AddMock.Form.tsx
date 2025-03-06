@@ -111,6 +111,15 @@ export const AddMockForm = ({
       }
     });
     
+    // Get projects from store
+    if (store.projects) {
+      store.projects.forEach(project => {
+        if (project && project.trim() !== '') {
+          allProjects.push(project);
+        }
+      });
+    }
+    
     // Deduplicate projects
     const uniqueProjects = [...new Set(allProjects)].sort();
     
@@ -143,6 +152,15 @@ export const AddMockForm = ({
       }
     });
     
+    // Get projects from store
+    if (store.projects) {
+      store.projects.forEach(project => {
+        if (project && project.trim() !== '') {
+          allProjects.push(project);
+        }
+      });
+    }
+    
     // Deduplicate projects
     const uniqueProjects = [...new Set(allProjects)].sort();
     
@@ -154,7 +172,7 @@ export const AddMockForm = ({
     
     // Update the state
     setProjectData([...formattedProjects]);
-  }, [store.mocks]);
+  }, [store.mocks, store.projects]);
 
   // Refresh project data when component mounts
   React.useEffect(() => {
@@ -357,7 +375,29 @@ export const AddMockForm = ({
                           // Check if project already exists
                           if (!projectData.some(p => p.value === query)) {
                             const newItem = { value: query, label: query };
+                            
+                            // Add to local state
                             setProjectData(prev => [...prev, newItem]);
+                            
+                            // Add to store
+                            const updatedProjects = [...(store.projects || []), query];
+                            const updatedStore = { ...store, projects: updatedProjects };
+                            
+                            storeActions
+                              .updateStoreInDB(updatedStore)
+                              .then(setStoreProperties)
+                              .then(() => {
+                                storeActions.refreshContentStore(tab.id);
+                              })
+                              .catch((error) => {
+                                console.error(error);
+                                notifications.show({
+                                  title: "Error",
+                                  message: "Failed to add project to store",
+                                  color: "red",
+                                });
+                              });
+                            
                             return newItem.value;
                           }
                           return query; // Return existing project

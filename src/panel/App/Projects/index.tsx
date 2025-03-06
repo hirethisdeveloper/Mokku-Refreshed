@@ -40,16 +40,27 @@ export const Projects = () => {
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [projectToDelete, setProjectToDelete] = useState<string | null>(null);
 
-  // Load projects from mocks
+  // Load projects from mocks and store
   useEffect(() => {
     const allProjects = [];
+    
+    // Get projects from mocks
     store.mocks.forEach(mock => {
       if (mock.project) {
         allProjects.push(mock.project);
       }
     });
+    
+    // Get projects from store
+    if (store.projects) {
+      store.projects.forEach(project => {
+        allProjects.push(project);
+      });
+    }
+    
+    // Update local state with unique projects
     setProjects([...new Set(allProjects)].sort());
-  }, [store.mocks]);
+  }, [store.mocks, store.projects]);
 
   // Refresh the projects list when the component mounts
   useEffect(() => {
@@ -101,13 +112,33 @@ export const Projects = () => {
       return;
     }
 
+    // Update local state
     setProjects([...projects, newProjectName].sort());
     setNewProjectName("");
     
-    notifications.show({
-      title: "Project Created",
-      message: `Project "${newProjectName}" has been created`,
-    });
+    // Update store with new project
+    const updatedProjects = [...(store.projects || []), newProjectName];
+    const updatedStore = { ...store, projects: updatedProjects };
+    
+    storeActions
+      .updateStoreInDB(updatedStore)
+      .then(setStoreProperties)
+      .then(() => {
+        storeActions.refreshContentStore(tab.id);
+        
+        notifications.show({
+          title: "Project Created",
+          message: `Project "${newProjectName}" has been created`,
+        });
+      })
+      .catch((error) => {
+        console.error(error);
+        notifications.show({
+          title: "Error",
+          message: "Failed to create project",
+          color: "red",
+        });
+      });
   };
 
   // Handle renaming a project
@@ -150,7 +181,15 @@ export const Projects = () => {
       return mock;
     });
 
-    const updatedStore = { ...store, mocks: updatedMocks };
+    // Update projects in the store
+    const updatedProjects = (store.projects || [])
+      .map(project => project === editingProject.original ? editingProject.new : project);
+
+    const updatedStore = { 
+      ...store, 
+      mocks: updatedMocks,
+      projects: updatedProjects
+    };
 
     storeActions
       .updateStoreInDB(updatedStore)
@@ -159,12 +198,12 @@ export const Projects = () => {
         storeActions.refreshContentStore(tab.id);
         
         // Create a new array with the renamed project
-        const updatedProjects = projects
+        const updatedProjectsArray = projects
           .filter(p => p !== editingProject.original) // Remove the original project
           .concat(editingProject.new) // Add the new project name
           .sort(); // Sort the array
         
-        setProjects(updatedProjects);
+        setProjects(updatedProjectsArray);
         setEditingProject(null);
         
         notifications.show({
@@ -195,7 +234,15 @@ export const Projects = () => {
       return mock;
     });
 
-    const updatedStore = { ...store, mocks: updatedMocks };
+    // Remove project from the store's projects array
+    const updatedProjects = (store.projects || [])
+      .filter(project => project !== projectToDelete);
+
+    const updatedStore = { 
+      ...store, 
+      mocks: updatedMocks,
+      projects: updatedProjects
+    };
 
     storeActions
       .updateStoreInDB(updatedStore)
@@ -204,8 +251,6 @@ export const Projects = () => {
         storeActions.refreshContentStore(tab.id);
         
         // Create a new array without the deleted project
-        const updatedProjects = projects.filter(p => p !== projectToDelete);
-        
         setProjects(updatedProjects);
         setProjectToDelete(null);
         setIsDeleteModalOpen(false);

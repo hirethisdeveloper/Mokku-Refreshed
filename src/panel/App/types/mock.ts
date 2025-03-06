@@ -65,6 +65,7 @@ export interface IStore {
   theme: "dark" | "light";
   mocks: IMockResponse[];
   totalMocksCreated: number;
+  projects: string[];
   activityInfo: {
     promoted: boolean;
   };

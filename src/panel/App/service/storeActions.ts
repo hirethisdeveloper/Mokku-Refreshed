@@ -23,6 +23,7 @@ export const getDefaultStore = (): IStore => ({
   active: false,
   mocks: [],
   totalMocksCreated: 0,
+  projects: [],
   collections: {},
   activityInfo: {
     promoted: false,
