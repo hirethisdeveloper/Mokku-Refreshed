@@ -47,7 +47,7 @@ const getSchema = ({
   },
   {
     header: "Name",
-    content: (data) => data.name,
+    content: (data) => data.name || "",
     width: 240,
     sortKey: "name",
   },
@@ -83,7 +83,7 @@ const getSchema = ({
   },
   {
     header: "Delay",
-    content: (data) => data.delay,
+    content: (data) => data.delay || 0,
     width: 120,
     sortKey: "delay",
   },
@@ -136,7 +136,7 @@ const useMockStoreSelector = (state: useChromeStoreState) => ({
   setStoreProperties: state.setStoreProperties,
 });
 
-export const Mocks = () => {
+export const Mocks: React.FC = () => {
   const { store, selectedMock, setSelectedMock } = useChromeStore(
     useMockStoreSelector,
     shallow,
@@ -268,7 +268,11 @@ export const Mocks = () => {
 
   return (
     <TableWrapper
-      onRowClick={(data) => setSelectedMock(data)}
+      onRowClick={(data) => {
+        if (data) {
+          setSelectedMock(data);
+        }
+      }}
       selectedRowId={selectedMock?.id}
       data={sortedMocks}
       schema={schema}
