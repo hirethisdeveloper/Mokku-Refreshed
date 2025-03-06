@@ -26,23 +26,29 @@ const postMessage = (
   type: IEventMessage["type"],
   ackRequired,
 ) => {
-  const messageId = ackRequired ? messageIdFactory.getId() : null;
+  try {
+    const messageId = ackRequired ? messageIdFactory.getId() : null;
 
-  const messageObject: IEventMessage = {
-    id: messageId,
-    message,
-    to: "CONTENT",
-    from: "HOOK",
-    extensionName: "MOKKU",
-    type,
-  };
+    const messageObject: IEventMessage = {
+      id: messageId,
+      message,
+      to: "CONTENT",
+      from: "HOOK",
+      extensionName: "MOKKU",
+      type,
+    };
 
-  messageService.send(messageObject);
+    messageService.send(messageObject);
 
-  if (messageId !== null) {
-    return new Promise((reslove) => {
-      messageBus.addLister(messageId, reslove);
-    });
+    if (messageId !== null) {
+      return new Promise((resolve) => {
+        messageBus.addLister(messageId, resolve);
+      });
+    }
+  } catch (error) {
+    console.warn("MOKKU: Error in postMessage", error);
+    // Return a resolved promise to prevent further errors
+    return Promise.resolve({});
   }
 };
 
