@@ -12,6 +12,64 @@ import {
 import { useMockActions } from "./Mocks.action";
 import { Placeholder } from "../Blocks/Placeholder";
 
+// Styles for reuse
+const contextMenuOverlayStyle = {
+  position: 'fixed' as const,
+  top: 0,
+  left: 0,
+  right: 0,
+  bottom: 0,
+  zIndex: 999,
+};
+
+const contextMenuPaperStyle = (position: { x: number; y: number }) => ({
+  position: 'absolute' as const,
+  top: position.y,
+  left: position.x,
+  zIndex: 1000,
+  minWidth: '150px',
+  border: '1px solid #666666'
+});
+
+const contextMenuItemBaseStyle = {
+  padding: '8px 12px', 
+  cursor: 'pointer', 
+  display: 'flex', 
+  alignItems: 'center',
+  transition: 'background-color 0.2s ease'
+};
+
+// Context Menu Item Component
+interface ContextMenuItemProps {
+  icon: React.ReactNode;
+  label: string;
+  onClick: () => void;
+  color?: string;
+}
+
+const ContextMenuItem: React.FC<ContextMenuItemProps> = ({ icon, label, onClick, color }) => {
+  return (
+    <div 
+      className="context-menu-item"
+      style={{ 
+        ...contextMenuItemBaseStyle,
+        color,
+      }}
+      onClick={onClick}
+      onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'rgba(0, 0, 0, 0.05)'}
+      onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+    >
+      {icon}
+      {label}
+    </div>
+  );
+};
+
+// Helper to stop event propagation
+const stopPropagation = (event: React.SyntheticEvent) => {
+  event.stopPropagation();
+};
+
 interface GetSchemeProps {
   toggleMock: (mock: IMockResponse) => void;
   deleteMock: (mock: IMockResponse) => void;
@@ -38,22 +96,20 @@ const getSchema = ({
       <Checkbox
         checked={allSelected}
         onChange={(event) => {
-          event.stopPropagation();
+          stopPropagation(event);
           toggleAllMocks();
         }}
       />
     ),
     content: (data) => (
       <div
-        onClick={(event) => {
-          event.stopPropagation();
-        }}
+        onClick={stopPropagation}
         style={{ cursor: "pointer" }}
       >
         <Checkbox
           checked={selectedMocks.has(data.id)}
           onChange={(event) => {
-            event.stopPropagation();
+            stopPropagation(event);
             toggleMockSelection(data.id);
           }}
         />
@@ -65,10 +121,7 @@ const getSchema = ({
     header: "",
     content: (data) => (
       <div
-        onClick={(event) => {
-          // this was not working with switch for some unknown reason
-          event.stopPropagation();
-        }}
+        onClick={stopPropagation}
         style={{ cursor: "pointer" }}
       >
         <Switch
@@ -129,10 +182,7 @@ const getSchema = ({
       <Flex
         align="center"
         gap="4px"
-        onClick={(event) => {
-          // this was not working with switch for some unknown reason
-          event.stopPropagation();
-        }}
+        onClick={stopPropagation}
       >
         <ActionIcon
           variant="outline"
@@ -172,32 +222,22 @@ const useMockStoreSelector = (state: useChromeStoreState) => ({
   setStoreProperties: state.setStoreProperties,
 });
 
-export const Mocks: React.FC = () => {
-  const { store, selectedMock, setSelectedMock } = useChromeStore(
-    useMockStoreSelector,
-    shallow,
-  );
-  const search = useGlobalStore((state) => state.search).toLowerCase();
-  const filterNon200 = useGlobalStore((state) => state.filterNon200);
-  const projectFilter = useGlobalStore((state) => state.projectFilter);
-  const [sortKey, setSortKey] = useState<keyof IMockResponse | undefined>(undefined);
-  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
-  const [selectedMocks, setSelectedMocks] = useState<Set<string | number>>(new Set());
-  const [contextMenuPosition, setContextMenuPosition] = useState<{ x: number; y: number } | null>(null);
-  const [rightClickedMock, setRightClickedMock] = useState<IMockResponse | null>(null);
-
-  const { deleteMock, duplicateMock, toggleMock, editMock } = useMockActions();
-
-  const filteredMocks = store.mocks.filter(
-    (mock) => {
-      // If search is empty, return all mocks
-      if (!search) return true;
-      
+// Helper function for filtering mocks
+const filterMocks = (
+  mocks: IMockResponse[], 
+  search: string, 
+  filterNon200: boolean, 
+  projectFilter: string | null
+): IMockResponse[] => {
+  return mocks.filter(mock => {
+    // Search filtering
+    if (search) {
+      const searchLower = search.toLowerCase();
       // Check if search is using field:value format
-      const colonIndex = search.indexOf(':');
+      const colonIndex = searchLower.indexOf(':');
       if (colonIndex > 0) {
-        const field = search.substring(0, colonIndex).trim().toLowerCase();
-        const value = search.substring(colonIndex + 1).trim().toLowerCase();
+        const field = searchLower.substring(0, colonIndex).trim();
+        const value = searchLower.substring(colonIndex + 1).trim();
         
         // Return all mocks if value is empty
         if (!value) return true;
@@ -220,25 +260,16 @@ export const Mocks: React.FC = () => {
             return (mock?.method || "").toLowerCase().includes(value);
           default:
             // If field is not recognized, perform regular search
-            return (mock?.name || "").toLowerCase().includes(search) ||
-                   (mock?.url || "").toLowerCase().includes(search) ||
-                   (mock?.method || "").toLowerCase().includes(search) ||
-                   (mock?.status || "").toString().includes(search) ||
-                   (mock?.project || "").toLowerCase().includes(search) ||
-                   (mock?.tags || []).some(tag => tag.toLowerCase().includes(search));
+            return performGeneralSearch(mock, searchLower);
         }
       }
       
       // Regular search (no field:value format)
-      return (mock?.name || "").toLowerCase().includes(search) ||
-             (mock?.url || "").toLowerCase().includes(search) ||
-             (mock?.method || "").toLowerCase().includes(search) ||
-             (mock?.status || "").toString().includes(search) ||
-             (mock?.project || "").toLowerCase().includes(search) ||
-             // Search in tags
-             (mock?.tags || []).some(tag => tag.toLowerCase().includes(search));
+      return performGeneralSearch(mock, searchLower);
     }
-  ).filter(mock => {
+    
+    return true;
+  }).filter(mock => {
     // Apply the non-200 filter if enabled
     if (filterNon200) {
       return mock.status !== 200;
@@ -251,29 +282,93 @@ export const Mocks: React.FC = () => {
     }
     return true;
   });
+};
 
-  const sortedMocks = React.useMemo(() => {
-    if (!sortKey) return filteredMocks;
+// Helper for general search across multiple fields
+const performGeneralSearch = (mock: IMockResponse, search: string): boolean => {
+  return (mock?.name || "").toLowerCase().includes(search) ||
+         (mock?.url || "").toLowerCase().includes(search) ||
+         (mock?.method || "").toLowerCase().includes(search) ||
+         (mock?.status || "").toString().includes(search) ||
+         (mock?.project || "").toLowerCase().includes(search) ||
+         (mock?.tags || []).some(tag => tag.toLowerCase().includes(search));
+};
 
-    return [...filteredMocks].sort((a, b) => {
-      const aValue = a[sortKey];
-      const bValue = b[sortKey];
+// Helper for sorting mocks
+const sortMocks = (
+  mocks: IMockResponse[], 
+  sortKey?: keyof IMockResponse, 
+  sortDirection: 'asc' | 'desc' = 'asc'
+): IMockResponse[] => {
+  if (!sortKey) return mocks;
 
-      if (aValue === undefined || bValue === undefined) return 0;
+  return [...mocks].sort((a, b) => {
+    const aValue = a[sortKey];
+    const bValue = b[sortKey];
 
-      // Handle different types of values
-      let comparison = 0;
-      if (typeof aValue === 'string' && typeof bValue === 'string') {
-        comparison = aValue.localeCompare(bValue);
-      } else if (typeof aValue === 'number' && typeof bValue === 'number') {
-        comparison = aValue - bValue;
-      } else {
-        comparison = String(aValue).localeCompare(String(bValue));
+    if (aValue === undefined || bValue === undefined) return 0;
+
+    // Handle different types of values
+    let comparison = 0;
+    if (typeof aValue === 'string' && typeof bValue === 'string') {
+      comparison = aValue.localeCompare(bValue);
+    } else if (typeof aValue === 'number' && typeof bValue === 'number') {
+      comparison = aValue - bValue;
+    } else {
+      comparison = String(aValue).localeCompare(String(bValue));
+    }
+
+    return sortDirection === 'asc' ? comparison : -comparison;
+  });
+};
+
+export const Mocks: React.FC = () => {
+  const { store, selectedMock, setSelectedMock } = useChromeStore(
+    useMockStoreSelector,
+    shallow,
+  );
+  const search = useGlobalStore((state) => state.search).toLowerCase();
+  const filterNon200 = useGlobalStore((state) => state.filterNon200);
+  const projectFilter = useGlobalStore((state) => state.projectFilter);
+  const [sortKey, setSortKey] = useState<keyof IMockResponse | undefined>(undefined);
+  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
+  const [selectedMocks, setSelectedMocks] = useState<Set<string | number>>(new Set());
+  const [contextMenuPosition, setContextMenuPosition] = useState<{ x: number; y: number } | null>(null);
+  const [rightClickedMock, setRightClickedMock] = useState<IMockResponse | null>(null);
+
+  const { deleteMock, duplicateMock, toggleMock, editMock } = useMockActions();
+
+  const filteredMocks = filterMocks(store.mocks, search, filterNon200, projectFilter);
+  const sortedMocks = React.useMemo(
+    () => sortMocks(filteredMocks, sortKey, sortDirection),
+    [filteredMocks, sortKey, sortDirection]
+  );
+
+  const handleContextMenuClose = React.useCallback(() => {
+    setContextMenuPosition(null);
+    setRightClickedMock(null);
+  }, []);
+
+  // Add event listener to handle right-clicks anywhere in the document
+  useEffect(() => {
+    const handleGlobalContextMenu = (event: MouseEvent) => {
+      // Only handle right-clicks outside the table
+      // Table right-clicks are handled by the TableWrapper's onContextMenu
+      const target = event.target as HTMLElement;
+      const isInsideTable = target.closest('table');
+      
+      if (!isInsideTable && contextMenuPosition) {
+        // If clicking outside the table while a context menu is open, close it
+        event.preventDefault();
+        handleContextMenuClose();
       }
+    };
 
-      return sortDirection === 'asc' ? comparison : -comparison;
-    });
-  }, [filteredMocks, sortKey, sortDirection]);
+    document.addEventListener('contextmenu', handleGlobalContextMenu);
+    return () => {
+      document.removeEventListener('contextmenu', handleGlobalContextMenu);
+    };
+  }, [contextMenuPosition, handleContextMenuClose]);
 
   const toggleMockSelection = (mockId: string | number) => {
     setSelectedMocks(prevSelected => {
@@ -320,15 +415,12 @@ export const Mocks: React.FC = () => {
 
   const handleContextMenu = (event: React.MouseEvent, mock: IMockResponse) => {
     event.preventDefault();
+    // Always close the existing menu and open a new one
     setContextMenuPosition({ x: event.clientX, y: event.clientY });
     setRightClickedMock(mock);
   };
 
-  const handleContextMenuClose = () => {
-    setContextMenuPosition(null);
-    setRightClickedMock(null);
-  };
-
+  // Render placeholder for empty states
   if (store.mocks.length === 0) {
     return (
       <Placeholder
@@ -362,75 +454,34 @@ export const Mocks: React.FC = () => {
       {contextMenuPosition && rightClickedMock && (
         <Portal>
           <div
-            style={{
-              position: 'fixed',
-              top: 0,
-              left: 0,
-              right: 0,
-              bottom: 0,
-              zIndex: 999,
-            }}
+            style={contextMenuOverlayStyle}
             onClick={handleContextMenuClose}
           >
             <Paper
               shadow="md"
-              style={{
-                position: 'absolute',
-                top: contextMenuPosition.y,
-                left: contextMenuPosition.x,
-                zIndex: 1000,
-                minWidth: '150px',
-                border: '1px solid #666666'
-              }}
+              style={contextMenuPaperStyle(contextMenuPosition)}
               onClick={(e) => e.stopPropagation()}
             >
               <div>
-                <div 
-                  className="context-menu-item"
-                  style={{ 
-                    padding: '8px 12px', 
-                    cursor: 'pointer', 
-                    display: 'flex', 
-                    alignItems: 'center',
-                    transition: 'background-color 0.2s ease'
-                  }}
+                <ContextMenuItem 
+                  icon={<MdOutlineModeEditOutline size={14} style={{ marginRight: '8px' }} />}
+                  label="Edit"
                   onClick={() => {
                     editMock(rightClickedMock);
                     handleContextMenuClose();
                   }}
-                  onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'rgba(0, 0, 0, 0.05)'}
-                  onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
-                >
-                  <MdOutlineModeEditOutline size={14} style={{ marginRight: '8px' }} />
-                  Edit
-                </div>
-                <div 
-                  className="context-menu-item"
-                  style={{ 
-                    padding: '8px 12px', 
-                    cursor: 'pointer', 
-                    display: 'flex', 
-                    alignItems: 'center',
-                    transition: 'background-color 0.2s ease'
-                  }}
+                />
+                <ContextMenuItem 
+                  icon={<MdOutlineContentCopy size={14} style={{ marginRight: '8px' }} />}
+                  label="Duplicate"
                   onClick={() => {
                     duplicateMock(rightClickedMock);
                     handleContextMenuClose();
                   }}
-                  onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'rgba(0, 0, 0, 0.05)'}
-                  onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
-                >
-                  <MdOutlineContentCopy size={14} style={{ marginRight: '8px' }} />
-                  Duplicate
-                </div>
+                />
                 <div 
                   className="context-menu-item"
-                  style={{ 
-                    padding: '8px 12px', 
-                    display: 'flex', 
-                    alignItems: 'center',
-                    transition: 'background-color 0.2s ease'
-                  }}
+                  style={contextMenuItemBaseStyle}
                   onClick={(e) => e.stopPropagation()}
                   onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'rgba(0, 0, 0, 0.05)'}
                   onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
@@ -448,26 +499,15 @@ export const Mocks: React.FC = () => {
                   {rightClickedMock.active ? 'Deactivate' : 'Activate'}
                 </div>
                 <div style={{ height: '1px', background: 'rgba(0,0,0,0.1)', margin: '4px 0' }} />
-                <div 
-                  className="context-menu-item"
-                  style={{ 
-                    padding: '8px 12px', 
-                    cursor: 'pointer', 
-                    display: 'flex', 
-                    alignItems: 'center', 
-                    color: 'red',
-                    transition: 'background-color 0.2s ease'
-                  }}
+                <ContextMenuItem 
+                  icon={<MdDeleteOutline size={14} style={{ marginRight: '8px' }} />}
+                  label="Delete"
                   onClick={() => {
                     deleteMock(rightClickedMock);
                     handleContextMenuClose();
                   }}
-                  onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'rgba(0, 0, 0, 0.05)'}
-                  onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
-                >
-                  <MdDeleteOutline size={14} style={{ marginRight: '8px' }} />
-                  Delete
-                </div>
+                  color="red"
+                />
               </div>
             </Paper>
           </div>
