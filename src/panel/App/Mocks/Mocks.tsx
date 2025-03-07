@@ -482,7 +482,13 @@ export const Mocks: React.FC = () => {
                 <div 
                   className="context-menu-item"
                   style={contextMenuItemBaseStyle}
-                  onClick={(e) => e.stopPropagation()}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    // Toggle the mock's active state when the entire item is clicked
+                    const newActiveState = !rightClickedMock.active;
+                    toggleMock({ ...rightClickedMock, active: newActiveState });
+                    handleContextMenuClose();
+                  }}
                   onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'rgba(0, 0, 0, 0.05)'}
                   onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
                 >
@@ -491,6 +497,7 @@ export const Mocks: React.FC = () => {
                     onChange={(e) => {
                       e.stopPropagation();
                       toggleMock({ ...rightClickedMock, active: e.target.checked });
+                      handleContextMenuClose();
                     }}
                     size="xs"
                     style={{ marginRight: '8px' }}
