@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { ActionIcon, Flex, Switch, Badge, Group } from "@mantine/core";
+import { ActionIcon, Flex, Switch, Badge, Group, Checkbox } from "@mantine/core";
 import { TableSchema, TableWrapper } from "../Blocks/Table";
 import { IMockResponse } from "@mokku/types";
 import { useGlobalStore, useChromeStore, useChromeStoreState } from "../store";
@@ -17,6 +17,10 @@ interface GetSchemeProps {
   deleteMock: (mock: IMockResponse) => void;
   editMock: (mock: IMockResponse) => void;
   duplicateMock: (mock: IMockResponse) => void;
+  selectedMocks: Set<string | number>;
+  toggleMockSelection: (mockId: string | number) => void;
+  toggleAllMocks: () => void;
+  allSelected: boolean;
 }
 
 const getSchema = ({
@@ -24,7 +28,39 @@ const getSchema = ({
   deleteMock,
   duplicateMock,
   editMock,
+  selectedMocks,
+  toggleMockSelection,
+  toggleAllMocks,
+  allSelected,
 }: GetSchemeProps): TableSchema<IMockResponse> => [
+  {
+    header: (
+      <Checkbox
+        checked={allSelected}
+        onChange={(event) => {
+          event.stopPropagation();
+          toggleAllMocks();
+        }}
+      />
+    ),
+    content: (data) => (
+      <div
+        onClick={(event) => {
+          event.stopPropagation();
+        }}
+        style={{ cursor: "pointer" }}
+      >
+        <Checkbox
+          checked={selectedMocks.has(data.id)}
+          onChange={(event) => {
+            event.stopPropagation();
+            toggleMockSelection(data.id);
+          }}
+        />
+      </div>
+    ),
+    width: 60,
+  },
   {
     header: "",
     content: (data) => (
@@ -146,15 +182,9 @@ export const Mocks: React.FC = () => {
   const projectFilter = useGlobalStore((state) => state.projectFilter);
   const [sortKey, setSortKey] = useState<keyof IMockResponse | undefined>(undefined);
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
+  const [selectedMocks, setSelectedMocks] = useState<Set<string | number>>(new Set());
 
   const { deleteMock, duplicateMock, toggleMock, editMock } = useMockActions();
-
-  const schema = getSchema({
-    toggleMock,
-    deleteMock,
-    duplicateMock,
-    editMock,
-  });
 
   const filteredMocks = store.mocks.filter(
     (mock) => {
@@ -243,6 +273,44 @@ export const Mocks: React.FC = () => {
     });
   }, [filteredMocks, sortKey, sortDirection]);
 
+  const toggleMockSelection = (mockId: string | number) => {
+    setSelectedMocks(prevSelected => {
+      const newSelected = new Set(prevSelected);
+      if (newSelected.has(mockId)) {
+        newSelected.delete(mockId);
+      } else {
+        newSelected.add(mockId);
+      }
+      return newSelected;
+    });
+  };
+
+  const toggleAllMocks = () => {
+    if (selectedMocks.size === sortedMocks.length) {
+      // If all are selected, deselect all
+      setSelectedMocks(new Set());
+    } else {
+      // Otherwise, select all
+      setSelectedMocks(new Set(sortedMocks.map(mock => mock.id)));
+    }
+  };
+
+  const schema = getSchema({
+    toggleMock,
+    deleteMock,
+    duplicateMock,
+    editMock,
+    selectedMocks,
+    toggleMockSelection,
+    toggleAllMocks,
+    allSelected: sortedMocks.length > 0 && selectedMocks.size === sortedMocks.length,
+  });
+
+  // Reset selected mocks when filters change
+  React.useEffect(() => {
+    setSelectedMocks(new Set());
+  }, [search, filterNon200, projectFilter]);
+
   const handleSort = (key: keyof IMockResponse, direction: 'asc' | 'desc') => {
     setSortKey(key);
     setSortDirection(direction);
@@ -268,11 +336,6 @@ export const Mocks: React.FC = () => {
 
   return (
     <TableWrapper
-      onRowClick={(data) => {
-        if (data) {
-          setSelectedMock(data);
-        }
-      }}
       selectedRowId={selectedMock?.id}
       data={sortedMocks}
       schema={schema}

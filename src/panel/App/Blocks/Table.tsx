@@ -2,7 +2,7 @@ import React from "react";
 import { createStyles, Table } from "@mantine/core";
 
 export type TableSchema<T> = Array<{
-  header: string;
+  header: string | React.ReactNode;
   content: (data: T) => React.ReactNode;
   minWidth?: number;
   maxWidth?: number;
@@ -39,7 +39,7 @@ const useStyles = createStyles((theme) => ({
   },
   rows: {
     "&:hover": {
-      cursor: "pointer",
+      cursor: "default",
     },
   },
   th: {
@@ -100,7 +100,9 @@ export const TableWrapper = <T extends unknown & { id: string | number }>({
     <tr
       key={`row-${index}`}
       onClick={() => {
-        onRowClick(row);
+        if (onRowClick) {
+          onRowClick(row);
+        }
       }}
       className={`${selectedRowId === row.id ? classes.selectedRow : ""} ${
         classes.rows
