@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { ActionIcon, Flex, Switch, Badge, Group, Checkbox } from "@mantine/core";
+import { ActionIcon, Flex, Switch, Badge, Group, Checkbox, Menu } from "@mantine/core";
 import { TableSchema, TableWrapper } from "../Blocks/Table";
 import { IMockResponse } from "@mokku/types";
 import { useGlobalStore, useChromeStore, useChromeStoreState } from "../store";
@@ -183,6 +183,8 @@ export const Mocks: React.FC = () => {
   const [sortKey, setSortKey] = useState<keyof IMockResponse | undefined>(undefined);
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
   const [selectedMocks, setSelectedMocks] = useState<Set<string | number>>(new Set());
+  const [contextMenuPosition, setContextMenuPosition] = useState<{ x: number; y: number } | null>(null);
+  const [rightClickedMock, setRightClickedMock] = useState<IMockResponse | null>(null);
 
   const { deleteMock, duplicateMock, toggleMock, editMock } = useMockActions();
 
@@ -316,6 +318,17 @@ export const Mocks: React.FC = () => {
     setSortDirection(direction);
   };
 
+  const handleContextMenu = (event: React.MouseEvent, mock: IMockResponse) => {
+    event.preventDefault();
+    setContextMenuPosition({ x: event.clientX, y: event.clientY });
+    setRightClickedMock(mock);
+  };
+
+  const handleContextMenuClose = () => {
+    setContextMenuPosition(null);
+    setRightClickedMock(null);
+  };
+
   if (store.mocks.length === 0) {
     return (
       <Placeholder
@@ -335,13 +348,74 @@ export const Mocks: React.FC = () => {
   }
 
   return (
-    <TableWrapper
-      selectedRowId={selectedMock?.id}
-      data={sortedMocks}
-      schema={schema}
-      onSort={handleSort}
-      sortKey={sortKey}
-      sortDirection={sortDirection}
-    />
+    <>
+      <TableWrapper
+        selectedRowId={selectedMock?.id}
+        data={sortedMocks}
+        schema={schema}
+        onSort={handleSort}
+        sortKey={sortKey}
+        sortDirection={sortDirection}
+        onContextMenu={handleContextMenu}
+      />
+      
+      {contextMenuPosition && rightClickedMock && (
+        <Menu
+          opened={!!contextMenuPosition}
+          onClose={handleContextMenuClose}
+          position="right"
+          withArrow
+          styles={{
+            dropdown: {
+              position: 'fixed',
+              left: `${contextMenuPosition.x}px`,
+              top: `${contextMenuPosition.y}px`,
+            },
+          }}
+        >
+          <Menu.Item 
+            icon={<MdOutlineModeEditOutline size={14} />}
+            onClick={() => {
+              editMock(rightClickedMock);
+              handleContextMenuClose();
+            }}
+          >
+            Edit
+          </Menu.Item>
+          <Menu.Item 
+            icon={<MdOutlineContentCopy size={14} />}
+            onClick={() => {
+              duplicateMock(rightClickedMock);
+              handleContextMenuClose();
+            }}
+          >
+            Duplicate
+          </Menu.Item>
+          <Menu.Item 
+            icon={<Switch 
+              checked={rightClickedMock.active}
+              onChange={(e) => {
+                toggleMock({ ...rightClickedMock, active: e.target.checked });
+                handleContextMenuClose();
+              }}
+              size="xs"
+            />}
+          >
+            {rightClickedMock.active ? 'Deactivate' : 'Activate'}
+          </Menu.Item>
+          <Menu.Divider />
+          <Menu.Item 
+            color="red"
+            icon={<MdDeleteOutline size={14} />}
+            onClick={() => {
+              deleteMock(rightClickedMock);
+              handleContextMenuClose();
+            }}
+          >
+            Delete
+          </Menu.Item>
+        </Menu>
+      )}
+    </>
   );
 };

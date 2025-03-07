@@ -18,6 +18,7 @@ export interface TableWrapperProps<T> {
   onSort?: (sortKey: keyof T, direction: 'asc' | 'desc') => void;
   sortKey?: keyof T;
   sortDirection?: 'asc' | 'desc';
+  onContextMenu?: (event: React.MouseEvent, data: T) => void;
 }
 
 const useStyles = createStyles((theme) => ({
@@ -59,6 +60,7 @@ export const TableWrapper = <T extends unknown & { id: string | number }>({
   onSort,
   sortKey,
   sortDirection,
+  onContextMenu,
 }: TableWrapperProps<T>) => {
   const { classes } = useStyles();
 
@@ -102,6 +104,11 @@ export const TableWrapper = <T extends unknown & { id: string | number }>({
       onClick={() => {
         if (onRowClick) {
           onRowClick(row);
+        }
+      }}
+      onContextMenu={(event) => {
+        if (onContextMenu) {
+          onContextMenu(event, row);
         }
       }}
       className={`${selectedRowId === row.id ? classes.selectedRow : ""} ${
