@@ -1,5 +1,5 @@
-import React, { useState } from "react";
-import { ActionIcon, Flex, Switch, Badge, Group, Checkbox, Menu } from "@mantine/core";
+import React, { useState, useEffect } from "react";
+import { ActionIcon, Flex, Switch, Badge, Group, Checkbox, Menu, Portal, Paper } from "@mantine/core";
 import { TableSchema, TableWrapper } from "../Blocks/Table";
 import { IMockResponse } from "@mokku/types";
 import { useGlobalStore, useChromeStore, useChromeStoreState } from "../store";
@@ -309,7 +309,7 @@ export const Mocks: React.FC = () => {
   });
 
   // Reset selected mocks when filters change
-  React.useEffect(() => {
+  useEffect(() => {
     setSelectedMocks(new Set());
   }, [search, filterNon200, projectFilter]);
 
@@ -360,61 +360,80 @@ export const Mocks: React.FC = () => {
       />
       
       {contextMenuPosition && rightClickedMock && (
-        <Menu
-          opened={!!contextMenuPosition}
-          onClose={handleContextMenuClose}
-          position="right"
-          withArrow
-          styles={{
-            dropdown: {
+        <Portal>
+          <div
+            style={{
               position: 'fixed',
-              left: `${contextMenuPosition.x}px`,
-              top: `${contextMenuPosition.y}px`,
-            },
-          }}
-        >
-          <Menu.Item 
-            icon={<MdOutlineModeEditOutline size={14} />}
-            onClick={() => {
-              editMock(rightClickedMock);
-              handleContextMenuClose();
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              zIndex: 999,
             }}
+            onClick={handleContextMenuClose}
           >
-            Edit
-          </Menu.Item>
-          <Menu.Item 
-            icon={<MdOutlineContentCopy size={14} />}
-            onClick={() => {
-              duplicateMock(rightClickedMock);
-              handleContextMenuClose();
-            }}
-          >
-            Duplicate
-          </Menu.Item>
-          <Menu.Item 
-            icon={<Switch 
-              checked={rightClickedMock.active}
-              onChange={(e) => {
-                toggleMock({ ...rightClickedMock, active: e.target.checked });
-                handleContextMenuClose();
+            <Paper
+              shadow="md"
+              style={{
+                position: 'absolute',
+                top: contextMenuPosition.y,
+                left: contextMenuPosition.x,
+                zIndex: 1000,
+                minWidth: '150px',
               }}
-              size="xs"
-            />}
-          >
-            {rightClickedMock.active ? 'Deactivate' : 'Activate'}
-          </Menu.Item>
-          <Menu.Divider />
-          <Menu.Item 
-            color="red"
-            icon={<MdDeleteOutline size={14} />}
-            onClick={() => {
-              deleteMock(rightClickedMock);
-              handleContextMenuClose();
-            }}
-          >
-            Delete
-          </Menu.Item>
-        </Menu>
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div>
+                <div 
+                  style={{ padding: '8px 12px', cursor: 'pointer', display: 'flex', alignItems: 'center' }}
+                  onClick={() => {
+                    editMock(rightClickedMock);
+                    handleContextMenuClose();
+                  }}
+                >
+                  <MdOutlineModeEditOutline size={14} style={{ marginRight: '8px' }} />
+                  Edit
+                </div>
+                <div 
+                  style={{ padding: '8px 12px', cursor: 'pointer', display: 'flex', alignItems: 'center' }}
+                  onClick={() => {
+                    duplicateMock(rightClickedMock);
+                    handleContextMenuClose();
+                  }}
+                >
+                  <MdOutlineContentCopy size={14} style={{ marginRight: '8px' }} />
+                  Duplicate
+                </div>
+                <div 
+                  style={{ padding: '8px 12px', display: 'flex', alignItems: 'center' }}
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <Switch 
+                    checked={rightClickedMock.active}
+                    onChange={(e) => {
+                      e.stopPropagation();
+                      toggleMock({ ...rightClickedMock, active: e.target.checked });
+                    }}
+                    size="xs"
+                    style={{ marginRight: '8px' }}
+                  />
+                  {rightClickedMock.active ? 'Deactivate' : 'Activate'}
+                </div>
+                <div style={{ height: '1px', background: 'rgba(0,0,0,0.1)', margin: '4px 0' }} />
+                <div 
+                  style={{ padding: '8px 12px', cursor: 'pointer', display: 'flex', alignItems: 'center', color: 'red' }}
+                  onClick={() => {
+                    deleteMock(rightClickedMock);
+                    handleContextMenuClose();
+                  }}
+                >
+                  <MdDeleteOutline size={14} style={{ marginRight: '8px' }} />
+                  Delete
+                </div>
+              </div>
+            </Paper>
+          </div>
+        </Portal>
       )}
     </>
   );
