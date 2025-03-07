@@ -11,6 +11,8 @@ import {
 } from "react-icons/md";
 import { useMockActions } from "./Mocks.action";
 import { Placeholder } from "../Blocks/Placeholder";
+import { storeActions } from "../service/storeActions";
+import { notifications } from "@mantine/notifications";
 
 // Styles for reuse
 const contextMenuOverlayStyle = {
@@ -323,7 +325,7 @@ const sortMocks = (
 };
 
 export const Mocks: React.FC = () => {
-  const { store, selectedMock, setSelectedMock } = useChromeStore(
+  const { store, selectedMock, setSelectedMock, setStoreProperties } = useChromeStore(
     useMockStoreSelector,
     shallow,
   );
@@ -418,6 +420,82 @@ export const Mocks: React.FC = () => {
     // Always close the existing menu and open a new one
     setContextMenuPosition({ x: event.clientX, y: event.clientY });
     setRightClickedMock(mock);
+    
+    // If the right-clicked mock is not in the selection, make it the only selected mock
+    if (!selectedMocks.has(mock.id)) {
+      setSelectedMocks(new Set([mock.id]));
+    }
+  };
+
+  // Add a new function to handle bulk toggle of mocks
+  const bulkToggleMocks = async (mocks: IMockResponse[], active: boolean) => {
+    // Create an updated version of each mock with the new active state
+    const updatedMocks = mocks.map(mock => ({ ...mock, active }));
+    
+    // Update the store with all mocks at once
+    const updatedStore = storeActions.updateMocks(store, updatedMocks);
+    
+    try {
+      // Update the store in the database
+      const result = await storeActions.updateStoreInDB(updatedStore);
+      // Update the UI state
+      setStoreProperties(result);
+      // Refresh the content store
+      storeActions.refreshContentStore(useGlobalStore.getState().meta.tab.id);
+      
+      // Show notification
+      const mockStatus = active ? "enabled" : "disabled";
+      const message = mocks.length > 1 
+        ? `${mocks.length} mocks are ${mockStatus}` 
+        : `"${mocks[0].name}" is ${mockStatus}`;
+      
+      notifications.show({
+        title: message,
+        message: `Mock${mocks.length > 1 ? 's' : ''} ${mockStatus}`,
+      });
+    } catch (error) {
+      console.error("Failed to update mocks:", error);
+      notifications.show({
+        title: "Cannot update mocks.",
+        message: "Something went wrong, unable to update mocks.",
+        color: "red",
+      });
+    }
+  };
+
+  // Add a new function to handle bulk deletion of mocks
+  const bulkDeleteMocks = async (mocks: IMockResponse[]) => {
+    // Get all mock IDs
+    const mockIds = mocks.map(mock => mock.id);
+    
+    // Update the store with all deletions at once
+    const updatedStore = storeActions.deleteMocks(store, mockIds);
+    
+    try {
+      // Update the store in the database
+      const result = await storeActions.updateStoreInDB(updatedStore);
+      // Update the UI state
+      setStoreProperties(result);
+      // Refresh the content store
+      storeActions.refreshContentStore(useGlobalStore.getState().meta.tab.id);
+      
+      // Show notification
+      const message = mocks.length > 1 
+        ? `${mocks.length} mocks deleted` 
+        : `"${mocks[0].name}" mock deleted`;
+      
+      notifications.show({
+        title: message,
+        message: `Mock${mocks.length > 1 ? 's' : ''} deleted successfully.`,
+      });
+    } catch (error) {
+      console.error("Failed to delete mocks:", error);
+      notifications.show({
+        title: "Cannot delete mocks.",
+        message: "Something went wrong, unable to delete mocks.",
+        color: "red",
+      });
+    }
   };
 
   // Render placeholder for empty states
@@ -463,30 +541,55 @@ export const Mocks: React.FC = () => {
               onClick={(e) => e.stopPropagation()}
             >
               <div>
-                <ContextMenuItem 
-                  icon={<MdOutlineModeEditOutline size={14} style={{ marginRight: '8px' }} />}
-                  label="Edit"
-                  onClick={() => {
-                    editMock(rightClickedMock);
-                    handleContextMenuClose();
-                  }}
-                />
+                {/* Show count of selected items if more than one */}
+                {selectedMocks.size > 1 && (
+                  <div style={{ 
+                    padding: '8px 12px', 
+                    borderBottom: '1px solid rgba(0,0,0,0.1)',
+                    fontSize: '14px',
+                    fontWeight: 'bold'
+                  }}>
+                    {selectedMocks.size} items selected
+                  </div>
+                )}
+                
+                {/* Edit is only available for single selection */}
+                {selectedMocks.size === 1 && (
+                  <ContextMenuItem 
+                    icon={<MdOutlineModeEditOutline size={14} style={{ marginRight: '8px' }} />}
+                    label="Edit"
+                    onClick={() => {
+                      editMock(rightClickedMock);
+                      handleContextMenuClose();
+                    }}
+                  />
+                )}
+                
                 <ContextMenuItem 
                   icon={<MdOutlineContentCopy size={14} style={{ marginRight: '8px' }} />}
-                  label="Duplicate"
+                  label={selectedMocks.size > 1 ? `Duplicate (${selectedMocks.size})` : "Duplicate"}
                   onClick={() => {
-                    duplicateMock(rightClickedMock);
+                    // Apply to all selected mocks
+                    const selectedMocksList = sortedMocks.filter(mock => selectedMocks.has(mock.id));
+                    // Process each selected mock
+                    selectedMocksList.forEach(mock => {
+                      duplicateMock(mock);
+                    });
                     handleContextMenuClose();
                   }}
                 />
+                
                 <div 
                   className="context-menu-item"
                   style={contextMenuItemBaseStyle}
-                  onClick={(e) => {
+                  onClick={async (e) => {
                     e.stopPropagation();
-                    // Toggle the mock's active state when the entire item is clicked
+                    // Get all selected mocks
+                    const selectedMocksList = sortedMocks.filter(mock => selectedMocks.has(mock.id));
                     const newActiveState = !rightClickedMock.active;
-                    toggleMock({ ...rightClickedMock, active: newActiveState });
+                    
+                    // Use the bulk update function instead of individual updates
+                    await bulkToggleMocks(selectedMocksList, newActiveState);
                     handleContextMenuClose();
                   }}
                   onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'rgba(0, 0, 0, 0.05)'}
@@ -494,23 +597,36 @@ export const Mocks: React.FC = () => {
                 >
                   <Switch 
                     checked={rightClickedMock.active}
-                    onChange={(e) => {
+                    onChange={async (e) => {
                       e.stopPropagation();
-                      toggleMock({ ...rightClickedMock, active: e.target.checked });
+                      // Get all selected mocks
+                      const selectedMocksList = sortedMocks.filter(mock => selectedMocks.has(mock.id));
+                      const newActiveState = e.target.checked;
+                      
+                      // Use the bulk update function instead of individual updates
+                      await bulkToggleMocks(selectedMocksList, newActiveState);
                       handleContextMenuClose();
                     }}
                     size="xs"
                     style={{ marginRight: '8px' }}
                     onClick={(e) => e.stopPropagation()}
                   />
-                  {rightClickedMock.active ? 'Deactivate' : 'Activate'}
+                  {rightClickedMock.active ? 
+                    (selectedMocks.size > 1 ? `Deactivate (${selectedMocks.size})` : 'Deactivate') : 
+                    (selectedMocks.size > 1 ? `Activate (${selectedMocks.size})` : 'Activate')}
                 </div>
+                
                 <div style={{ height: '1px', background: 'rgba(0,0,0,0.1)', margin: '4px 0' }} />
+                
                 <ContextMenuItem 
                   icon={<MdDeleteOutline size={14} style={{ marginRight: '8px' }} />}
-                  label="Delete"
-                  onClick={() => {
-                    deleteMock(rightClickedMock);
+                  label={selectedMocks.size > 1 ? `Delete (${selectedMocks.size})` : "Delete"}
+                  onClick={async () => {
+                    // Get all selected mocks
+                    const selectedMocksList = sortedMocks.filter(mock => selectedMocks.has(mock.id));
+                    
+                    // Use the bulk delete function instead of individual deletes
+                    await bulkDeleteMocks(selectedMocksList);
                     handleContextMenuClose();
                   }}
                   color="red"
