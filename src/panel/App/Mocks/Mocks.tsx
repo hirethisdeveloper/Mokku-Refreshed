@@ -380,33 +380,60 @@ export const Mocks: React.FC = () => {
                 left: contextMenuPosition.x,
                 zIndex: 1000,
                 minWidth: '150px',
+                border: '1px solid #666666'
               }}
               onClick={(e) => e.stopPropagation()}
             >
               <div>
                 <div 
-                  style={{ padding: '8px 12px', cursor: 'pointer', display: 'flex', alignItems: 'center' }}
+                  className="context-menu-item"
+                  style={{ 
+                    padding: '8px 12px', 
+                    cursor: 'pointer', 
+                    display: 'flex', 
+                    alignItems: 'center',
+                    transition: 'background-color 0.2s ease'
+                  }}
                   onClick={() => {
                     editMock(rightClickedMock);
                     handleContextMenuClose();
                   }}
+                  onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'rgba(0, 0, 0, 0.05)'}
+                  onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
                 >
                   <MdOutlineModeEditOutline size={14} style={{ marginRight: '8px' }} />
                   Edit
                 </div>
                 <div 
-                  style={{ padding: '8px 12px', cursor: 'pointer', display: 'flex', alignItems: 'center' }}
+                  className="context-menu-item"
+                  style={{ 
+                    padding: '8px 12px', 
+                    cursor: 'pointer', 
+                    display: 'flex', 
+                    alignItems: 'center',
+                    transition: 'background-color 0.2s ease'
+                  }}
                   onClick={() => {
                     duplicateMock(rightClickedMock);
                     handleContextMenuClose();
                   }}
+                  onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'rgba(0, 0, 0, 0.05)'}
+                  onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
                 >
                   <MdOutlineContentCopy size={14} style={{ marginRight: '8px' }} />
                   Duplicate
                 </div>
                 <div 
-                  style={{ padding: '8px 12px', display: 'flex', alignItems: 'center' }}
+                  className="context-menu-item"
+                  style={{ 
+                    padding: '8px 12px', 
+                    display: 'flex', 
+                    alignItems: 'center',
+                    transition: 'background-color 0.2s ease'
+                  }}
                   onClick={(e) => e.stopPropagation()}
+                  onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'rgba(0, 0, 0, 0.05)'}
+                  onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
                 >
                   <Switch 
                     checked={rightClickedMock.active}
@@ -416,16 +443,27 @@ export const Mocks: React.FC = () => {
                     }}
                     size="xs"
                     style={{ marginRight: '8px' }}
+                    onClick={(e) => e.stopPropagation()}
                   />
                   {rightClickedMock.active ? 'Deactivate' : 'Activate'}
                 </div>
                 <div style={{ height: '1px', background: 'rgba(0,0,0,0.1)', margin: '4px 0' }} />
                 <div 
-                  style={{ padding: '8px 12px', cursor: 'pointer', display: 'flex', alignItems: 'center', color: 'red' }}
+                  className="context-menu-item"
+                  style={{ 
+                    padding: '8px 12px', 
+                    cursor: 'pointer', 
+                    display: 'flex', 
+                    alignItems: 'center', 
+                    color: 'red',
+                    transition: 'background-color 0.2s ease'
+                  }}
                   onClick={() => {
                     deleteMock(rightClickedMock);
                     handleContextMenuClose();
                   }}
+                  onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'rgba(0, 0, 0, 0.05)'}
+                  onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
                 >
                   <MdDeleteOutline size={14} style={{ marginRight: '8px' }} />
                   Delete
