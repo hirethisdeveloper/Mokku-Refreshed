@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { ActionIcon, Flex, Switch, Badge, Group, Checkbox, Menu, Portal, Paper } from "@mantine/core";
+import { ActionIcon, Flex, Switch, Badge, Group, Checkbox, Menu, Portal, Paper, Modal, Text, MultiSelect, Select, Button } from "@mantine/core";
 import { TableSchema, TableWrapper } from "../Blocks/Table";
 import { IMockResponse } from "@mokku/types";
 import { useGlobalStore, useChromeStore, useChromeStoreState } from "../store";
@@ -8,6 +8,7 @@ import {
   MdDeleteOutline,
   MdOutlineContentCopy,
   MdOutlineModeEditOutline,
+  MdOutlineLabel,
 } from "react-icons/md";
 import { useMockActions } from "./Mocks.action";
 import { Placeholder } from "../Blocks/Placeholder";
@@ -324,6 +325,222 @@ const sortMocks = (
   });
 };
 
+// ProjectTagsModal component for editing projects and tags
+interface ProjectTagsModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  mocks: IMockResponse[];
+  onSave: (updatedMocks: IMockResponse[]) => Promise<void>;
+  store: any;
+  setStoreProperties: any;
+}
+
+const ProjectTagsModal: React.FC<ProjectTagsModalProps> = ({ 
+  isOpen, 
+  onClose, 
+  mocks, 
+  onSave,
+  store,
+  setStoreProperties
+}) => {
+  const [tags, setTags] = useState<string[]>([]);
+  const [project, setProject] = useState<string>("");
+  const [tagData, setTagData] = useState<Array<{ value: string; label: string }>>([]);
+  const [projectData, setProjectData] = useState<Array<{ value: string; label: string }>>([]);
+  const tab = useGlobalStore((state) => state.meta.tab);
+
+  // Initialize from the first mock if all mocks have the same values
+  useEffect(() => {
+    if (mocks.length > 0) {
+      // For tags, find common tags across all selected mocks
+      const commonTags = mocks.reduce((common, mock) => {
+        if (!common) return mock.tags || [];
+        return common.filter(tag => mock.tags?.includes(tag));
+      }, null as string[] | null) || [];
+      
+      setTags(commonTags);
+
+      // For project, use the first mock's project if all mocks have the same project
+      const allSameProject = mocks.every(mock => mock.project === mocks[0].project);
+      setProject(allSameProject ? (mocks[0].project || "") : "");
+    }
+  }, [mocks]);
+
+  // Get all unique tags from existing mocks
+  useEffect(() => {
+    const allTags = [];
+    store.mocks.forEach(mock => {
+      if (mock.tags && mock.tags.length > 0) {
+        mock.tags.forEach(tag => allTags.push(tag));
+      }
+    });
+    const uniqueTags = [...new Set(allTags)];
+    setTagData(uniqueTags.map(tag => ({ value: tag, label: tag })));
+  }, [store.mocks]);
+
+  // Get all unique projects from existing mocks
+  useEffect(() => {
+    // Get all projects from mocks
+    const allProjects = [];
+    store.mocks.forEach(mock => {
+      if (mock.project && mock.project.trim() !== '') {
+        allProjects.push(mock.project);
+      }
+    });
+    
+    // Get projects from store
+    if (store.projects) {
+      store.projects.forEach(project => {
+        if (project && project.trim() !== '') {
+          allProjects.push(project);
+        }
+      });
+    }
+    
+    // Deduplicate projects
+    const uniqueProjects = [...new Set(allProjects)].sort();
+    
+    // Format projects for the Select component
+    setProjectData(uniqueProjects.map(project => ({ 
+      value: project, 
+      label: project 
+    })));
+  }, [store.mocks, store.projects]);
+
+  // Validate tag to not contain special characters
+  const validateTag = (tag: string) => {
+    return /^[a-zA-Z0-9\s]+$/.test(tag) ? null : 'Tags cannot contain special characters';
+  };
+
+  // Validate project to not contain special characters
+  const validateProject = (project: string) => {
+    return /^[a-zA-Z0-9\s]+$/.test(project) ? null : 'Project cannot contain special characters';
+  };
+
+  const handleSave = async () => {
+    // Create updated versions of each mock
+    const updatedMocks = mocks.map(mock => ({
+      ...mock,
+      tags: tags,
+      project: project
+    }));
+    
+    await onSave(updatedMocks);
+    onClose();
+  };
+
+  return (
+    <Modal
+      opened={isOpen}
+      onClose={onClose}
+      title="Edit Project and Tags"
+      size="md"
+    >
+      <Flex direction="column" gap={16}>
+        <Flex direction="column" gap={8}>
+          <Text size="sm" weight={500}>Project</Text>
+          <Select
+            placeholder="Select or create a project"
+            data={projectData}
+            value={project}
+            onChange={setProject}
+            searchable
+            clearable
+            creatable
+            getCreateLabel={(query) => `+ Create ${query}`}
+            onCreate={(query) => {
+              const isValid = validateProject(query);
+              if (isValid === null) {
+                // Check if project already exists
+                if (!projectData.some(p => p.value === query)) {
+                  const newItem = { value: query, label: query };
+                  
+                  // Add to local state
+                  setProjectData(prev => [...prev, newItem]);
+                  
+                  // Add to store
+                  const updatedProjects = [...(store.projects || []), query];
+                  const updatedStore = { ...store, projects: updatedProjects };
+                  
+                  storeActions
+                    .updateStoreInDB(updatedStore)
+                    .then(setStoreProperties)
+                    .then(() => {
+                      storeActions.refreshContentStore(tab.id);
+                    })
+                    .catch((error) => {
+                      console.error(error);
+                      notifications.show({
+                        title: "Error",
+                        message: "Failed to add project to store",
+                        color: "red",
+                      });
+                    });
+                  
+                  return newItem.value;
+                }
+                return query; // Return existing project
+              }
+              // Show notification for invalid project name
+              notifications.show({
+                title: "Invalid Project Name",
+                message: isValid,
+                color: "red",
+              });
+              return null;
+            }}
+          />
+        </Flex>
+        
+        <Flex direction="column" gap={8}>
+          <Text size="sm" weight={500}>Tags</Text>
+          <MultiSelect
+            placeholder="Add tags"
+            data={tagData}
+            value={tags}
+            onChange={setTags}
+            searchable
+            clearable
+            creatable
+            getCreateLabel={(query) => `+ Create ${query}`}
+            onCreate={(query) => {
+              const isValid = validateTag(query);
+              if (isValid === null) {
+                const newItem = { value: query, label: query };
+                setTagData(prev => [...prev, newItem]);
+                return newItem;
+              }
+              // Show notification for invalid tag name
+              notifications.show({
+                title: "Invalid Tag Name",
+                message: isValid,
+                color: "red",
+              });
+              return null;
+            }}
+          />
+        </Flex>
+        
+        <Flex justify="flex-end" gap={8} mt={16}>
+          <Button 
+            variant="default" 
+            onClick={onClose}
+          >
+            Cancel
+          </Button>
+          <Button 
+            variant="filled" 
+            color="blue" 
+            onClick={handleSave}
+          >
+            Save
+          </Button>
+        </Flex>
+      </Flex>
+    </Modal>
+  );
+};
+
 export const Mocks: React.FC = () => {
   const { store, selectedMock, setSelectedMock, setStoreProperties } = useChromeStore(
     useMockStoreSelector,
@@ -337,6 +554,7 @@ export const Mocks: React.FC = () => {
   const [selectedMocks, setSelectedMocks] = useState<Set<string | number>>(new Set());
   const [contextMenuPosition, setContextMenuPosition] = useState<{ x: number; y: number } | null>(null);
   const [rightClickedMock, setRightClickedMock] = useState<IMockResponse | null>(null);
+  const [isProjectTagsModalOpen, setIsProjectTagsModalOpen] = useState(false);
 
   const { deleteMock, duplicateMock, toggleMock, editMock } = useMockActions();
 
@@ -498,6 +716,38 @@ export const Mocks: React.FC = () => {
     }
   };
 
+  // Add a new function to handle bulk update of projects and tags
+  const bulkUpdateProjectsAndTags = async (updatedMocks: IMockResponse[]) => {
+    // Update the store with all mocks at once
+    const updatedStore = storeActions.updateMocks(store, updatedMocks);
+    
+    try {
+      // Update the store in the database
+      const result = await storeActions.updateStoreInDB(updatedStore);
+      // Update the UI state
+      setStoreProperties(result);
+      // Refresh the content store
+      storeActions.refreshContentStore(useGlobalStore.getState().meta.tab.id);
+      
+      // Show notification
+      const message = updatedMocks.length > 1 
+        ? `${updatedMocks.length} mocks updated` 
+        : `"${updatedMocks[0].name}" updated`;
+      
+      notifications.show({
+        title: message,
+        message: "Project and tags updated successfully",
+      });
+    } catch (error) {
+      console.error("Failed to update mocks:", error);
+      notifications.show({
+        title: "Cannot update mocks",
+        message: "Something went wrong, unable to update mocks.",
+        color: "red",
+      });
+    }
+  };
+
   // Render placeholder for empty states
   if (store.mocks.length === 0) {
     return (
@@ -564,6 +814,18 @@ export const Mocks: React.FC = () => {
                     }}
                   />
                 )}
+                
+                {/* Add new option for editing projects and tags */}
+                <ContextMenuItem 
+                  icon={<MdOutlineLabel size={14} style={{ marginRight: '8px' }} />}
+                  label={selectedMocks.size > 1 ? `Edit Project & Tags (${selectedMocks.size})` : "Edit Project & Tags"}
+                  onClick={() => {
+                    // Get all selected mocks
+                    const selectedMocksList = sortedMocks.filter(mock => selectedMocks.has(mock.id));
+                    setIsProjectTagsModalOpen(true);
+                    handleContextMenuClose();
+                  }}
+                />
                 
                 <ContextMenuItem 
                   icon={<MdOutlineContentCopy size={14} style={{ marginRight: '8px' }} />}
@@ -636,6 +898,16 @@ export const Mocks: React.FC = () => {
           </div>
         </Portal>
       )}
+      
+      {/* Add the ProjectTagsModal */}
+      <ProjectTagsModal
+        isOpen={isProjectTagsModalOpen}
+        onClose={() => setIsProjectTagsModalOpen(false)}
+        mocks={sortedMocks.filter(mock => selectedMocks.has(mock.id))}
+        onSave={bulkUpdateProjectsAndTags}
+        store={store}
+        setStoreProperties={setStoreProperties}
+      />
     </>
   );
 };
