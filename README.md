@@ -34,7 +34,17 @@ Several new visual improvements have been added as well:
   - method:GET - Search for GET mocks
 - Mocks dashboard table headers are now sortable (ascending/descending)
 
-  
+## Context menu
+Bulk selection and a right click context menu of actions has been added.
+- Table head toggle select/deselect all
+- Individual row selection checkboxes
+- Context menu options:
+  - (1 selected) Edit option available
+  - (multi selected) Edit option not available
+  - Duplicate
+  - Edit Project and tags in bulk, opens a modal to set.
+  - Delete
+  - Activate / Deactivate
 
 ---
 ## Past info, maintained for posterity
