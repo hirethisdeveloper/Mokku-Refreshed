@@ -2,7 +2,7 @@ import React from "react";
 import { createStyles, Table } from "@mantine/core";
 
 export type TableSchema<T> = Array<{
-  header: string;
+  header: string | React.ReactNode;
   content: (data: T) => React.ReactNode;
   minWidth?: number;
   maxWidth?: number;
@@ -18,6 +18,7 @@ export interface TableWrapperProps<T> {
   onSort?: (sortKey: keyof T, direction: 'asc' | 'desc') => void;
   sortKey?: keyof T;
   sortDirection?: 'asc' | 'desc';
+  onContextMenu?: (event: React.MouseEvent, data: T) => void;
 }
 
 const useStyles = createStyles((theme) => ({
@@ -39,7 +40,7 @@ const useStyles = createStyles((theme) => ({
   },
   rows: {
     "&:hover": {
-      cursor: "pointer",
+      cursor: "default",
     },
   },
   th: {
@@ -59,6 +60,7 @@ export const TableWrapper = <T extends unknown & { id: string | number }>({
   onSort,
   sortKey,
   sortDirection,
+  onContextMenu,
 }: TableWrapperProps<T>) => {
   const { classes } = useStyles();
 
@@ -100,7 +102,14 @@ export const TableWrapper = <T extends unknown & { id: string | number }>({
     <tr
       key={`row-${index}`}
       onClick={() => {
-        onRowClick(row);
+        if (onRowClick) {
+          onRowClick(row);
+        }
+      }}
+      onContextMenu={(event) => {
+        if (onContextMenu) {
+          onContextMenu(event, row);
+        }
       }}
       className={`${selectedRowId === row.id ? classes.selectedRow : ""} ${
         classes.rows
