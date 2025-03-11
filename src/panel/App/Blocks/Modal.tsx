@@ -9,7 +9,7 @@ enum ModalType {
   Log = "LOG",
 }
 
-export const Modal = () => {
+export const Modal = ({ "data-testid": dataTestId = "modal-container", ...props }) => {
   const selectedMock = useChromeStore((state) => state.selectedMock);
   const selectedLog = useLogStore((state) => state.selectedLog);
   const setSelectedLog = useLogStore((state) => state.setSelectedLog);
@@ -37,9 +37,9 @@ export const Modal = () => {
     handleModalInstance(ModalType.Log, !!selectedLog);
   }, [selectedLog]);
 
-  const Mock = selectedMock ? <AddMock /> : null;
+  const Mock = selectedMock ? <AddMock data-testid="modal-add-mock" /> : null;
   const Log = selectedLog ? (
-    <LogDetails log={selectedLog} onClose={() => setSelectedLog()} />
+    <LogDetails log={selectedLog} onClose={() => setSelectedLog()} data-testid="modal-log-details" />
   ) : null;
 
   const componentOrderMap = {
@@ -49,6 +49,7 @@ export const Modal = () => {
 
   return (
     <div
+      data-testid={dataTestId}
       style={{
         display: "flex",
         position: "fixed",
@@ -59,9 +60,12 @@ export const Modal = () => {
         zIndex: 200000,
         background: "white",
       }}
+      {...props}
     >
       {order.map((o) => (
-        <Flex key={o}>{componentOrderMap[o]}</Flex>
+        <Flex key={o} data-testid={`modal-content-${o.toLowerCase()}`}>
+          {componentOrderMap[o]}
+        </Flex>
       ))}
     </div>
   );

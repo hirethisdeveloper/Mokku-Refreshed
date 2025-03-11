@@ -10,7 +10,7 @@ const useMockStoreSelector = (state: useChromeStoreState) => ({
   setStoreProperties: state.setStoreProperties,
 });
 
-export const AddMock = () => {
+export const AddMock = ({ "data-testid": dataTestId = "add-mock-component", ...props }) => {
   const {
     store,
     selectedMock,
@@ -19,13 +19,14 @@ export const AddMock = () => {
   } = useChromeStore(useMockStoreSelector);
 
   return (
-    <SideDrawer minWidth={480}>
+    <SideDrawer minWidth={480} data-testid={dataTestId} {...props}>
       <AddMockForm
         key={`${selectedMock.id}-${selectedMock.url}`}
         store={store}
         selectedMock={selectedMock}
         setSelectedMock={setSelectedMock}
         setStoreProperties={setStoreProperties}
+        data-testid="add-mock-form"
       />
     </SideDrawer>
   );

@@ -26,7 +26,7 @@ const viewSelector = (state: useGlobalStoreState) => ({
   setSearch: state.setSearch,
 });
 
-export const Header = () => {
+export const Header = ({ "data-testid": dataTestId = "app-header", ...props }) => {
   const { view, setView, search, setSearch } = useGlobalStore(
     viewSelector,
     shallow,
@@ -35,19 +35,20 @@ export const Header = () => {
   const [showSupportUs, setShowSupportUs] = useState(false);
 
   return (
-    <Tabs value={view} onTabChange={setView}>
-      <Tabs.List style={{ width: "100%" }}>
-        <Flex justify="space-between" align="center" style={{ width: "100%" }}>
-          <Flex align="center">
-            <Tabs.Tab value={ViewEnum.PROJECTS}>Projects</Tabs.Tab>
-            <Tabs.Tab value={ViewEnum.MOCKS}>Mocks</Tabs.Tab>
-            <Tabs.Tab value={ViewEnum.LOGS}>Logs</Tabs.Tab>
-            <Flex align="center" gap={8}>
+    <Tabs value={view} onTabChange={setView} data-testid={dataTestId} {...props}>
+      <Tabs.List style={{ width: "100%" }} data-testid="header-tabs-list">
+        <Flex justify="space-between" align="center" style={{ width: "100%" }} data-testid="header-flex-container">
+          <Flex align="center" data-testid="header-left-section">
+            <Tabs.Tab value={ViewEnum.PROJECTS} data-testid="header-tab-projects">Projects</Tabs.Tab>
+            <Tabs.Tab value={ViewEnum.MOCKS} data-testid="header-tab-mocks">Mocks</Tabs.Tab>
+            <Tabs.Tab value={ViewEnum.LOGS} data-testid="header-tab-logs">Logs</Tabs.Tab>
+            <Flex align="center" gap={8} data-testid="header-actions">
               <Button
                 onClick={() => setSelectedMock({})}
                 leftIcon={<MdAdd />}
                 size="xs"
                 variant="subtle"
+                data-testid="header-add-mock-button"
               >
                 Add Mock
               </Button>
@@ -57,21 +58,22 @@ export const Header = () => {
                 size="xs"
                 defaultValue={search}
                 onChange={(event) => setSearch(event.target.value)}
+                data-testid="header-search-input"
               />
-              <RecordButton />
-              {view === ViewEnum.MOCKS && <FilterNon200Button />}
-              <ImportExportButton />
-              {view === ViewEnum.MOCKS && <ProjectFilterButton />}
-              {view === "LOGS" ? <ClearButton /> : null}
+              <RecordButton data-testid="header-record-button" />
+              {view === ViewEnum.MOCKS && <FilterNon200Button data-testid="header-filter-non200-button" />}
+              <ImportExportButton data-testid="header-import-export-button" />
+              {view === ViewEnum.MOCKS && <ProjectFilterButton data-testid="header-project-filter-button" />}
+              {view === "LOGS" ? <ClearButton data-testid="header-clear-button" /> : null}
             </Flex>
           </Flex>
-          <Flex gap="4px" style={{ paddingRight: 4 }}>
-            <ThemeButton />
-            <RefreshButton />
-            <SwitchButton />
+          <Flex gap="4px" style={{ paddingRight: 4 }} data-testid="header-right-section">
+            <ThemeButton data-testid="header-theme-button" />
+            <RefreshButton data-testid="header-refresh-button" />
+            <SwitchButton data-testid="header-switch-button" />
           </Flex>
           {showSupportUs && (
-            <SupportUs onClose={() => setShowSupportUs(false)} />
+            <SupportUs onClose={() => setShowSupportUs(false)} data-testid="header-support-us" />
           )}
         </Flex>
       </Tabs.List>

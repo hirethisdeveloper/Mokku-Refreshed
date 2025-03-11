@@ -8,6 +8,7 @@ export type TableSchema<T> = Array<{
   maxWidth?: number;
   width?: number;
   sortKey?: keyof T;
+  testId?: string;
 }>;
 
 export interface TableWrapperProps<T> {
@@ -19,6 +20,7 @@ export interface TableWrapperProps<T> {
   sortKey?: keyof T;
   sortDirection?: 'asc' | 'desc';
   onContextMenu?: (event: React.MouseEvent, data: T) => void;
+  "data-testid"?: string;
 }
 
 const useStyles = createStyles((theme) => ({
@@ -48,7 +50,8 @@ const useStyles = createStyles((theme) => ({
       theme.colorScheme === "dark" ? theme.colors.dark[7] : theme.white,
     position: "sticky",
     top: 0,
-    borderBottom: "1px solid black"
+    borderBottom: "1px solid black",
+    zIndex: 100000,
   },
 }));
 
@@ -61,6 +64,8 @@ export const TableWrapper = <T extends unknown & { id: string | number }>({
   sortKey,
   sortDirection,
   onContextMenu,
+  "data-testid": dataTestId = "table-wrapper",
+  ...props
 }: TableWrapperProps<T>) => {
   const { classes } = useStyles();
 
@@ -74,8 +79,8 @@ export const TableWrapper = <T extends unknown & { id: string | number }>({
   };
 
   const ths = (
-    <tr>
-      {schema.map(({ header, minWidth, maxWidth, width, sortKey: headerSortKey }, index) => (
+    <tr data-testid="table-header-row">
+      {schema.map(({ header, minWidth, maxWidth, width, sortKey: headerSortKey, testId }, index) => (
         <th
           style={{ 
             minWidth, 
@@ -86,10 +91,11 @@ export const TableWrapper = <T extends unknown & { id: string | number }>({
           key={index}
           className={classes.th}
           onClick={() => handleHeaderClick(schema[index])}
+          data-testid={testId || `table-header-cell-${index}`}
         >
           {header}
           {headerSortKey && sortKey === headerSortKey && (
-            <span style={{ marginLeft: '5px' }}>
+            <span style={{ marginLeft: '5px' }} data-testid={`sort-indicator-${headerSortKey.toString()}`}>
               {sortDirection === 'asc' ? '↑' : '↓'}
             </span>
           )}
@@ -114,9 +120,13 @@ export const TableWrapper = <T extends unknown & { id: string | number }>({
       className={`${selectedRowId === row.id ? classes.selectedRow : ""} ${
         classes.rows
       }`}
+      data-testid={`table-row-${index}`}
+      data-row-id={row.id}
     >
-      {schema.map(({ content }, index) => (
-        <td key={index}>{content(row)}</td>
+      {schema.map(({ content, testId }, cellIndex) => (
+        <td key={cellIndex} data-testid={`table-cell-${index}-${cellIndex}`}>
+          {content(row)}
+        </td>
       ))}
     </tr>
   ));
@@ -128,9 +138,11 @@ export const TableWrapper = <T extends unknown & { id: string | number }>({
       highlightOnHover
       withColumnBorders
       style={{ position: "relative" }}
+      data-testid={dataTestId}
+      {...props}
     >
-      <thead>{ths}</thead>
-      <tbody>{rows}</tbody>
+      <thead data-testid="table-header">{ths}</thead>
+      <tbody data-testid="table-body">{rows}</tbody>
     </Table>
   );
 };
