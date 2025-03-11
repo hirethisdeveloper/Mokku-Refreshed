@@ -50,8 +50,7 @@ const useStyles = createStyles((theme) => ({
       theme.colorScheme === "dark" ? theme.colors.dark[7] : theme.white,
     position: "sticky",
     top: 0,
-    borderBottom: "1px solid black",
-    zIndex: 100000,
+    borderBottom: "1px solid black"
   },
 }));
 
