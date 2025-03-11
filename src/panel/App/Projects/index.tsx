@@ -44,19 +44,17 @@ export const Projects = () => {
   useEffect(() => {
     const allProjects = [];
     
+    // Get projects from store first
+    if (store.projects && store.projects.length > 0) {
+      allProjects.push(...store.projects);
+    }
+    
     // Get projects from mocks
     store.mocks.forEach(mock => {
       if (mock.project) {
         allProjects.push(mock.project);
       }
     });
-    
-    // Get projects from store
-    if (store.projects) {
-      store.projects.forEach(project => {
-        allProjects.push(project);
-      });
-    }
     
     // Update local state with unique projects
     setProjects([...new Set(allProjects)].sort());
@@ -66,11 +64,19 @@ export const Projects = () => {
   useEffect(() => {
     const refreshProjects = () => {
       const allProjects = [];
+      
+      // Get projects from store first
+      if (store.projects && store.projects.length > 0) {
+        allProjects.push(...store.projects);
+      }
+      
+      // Get projects from mocks
       store.mocks.forEach(mock => {
         if (mock.project) {
           allProjects.push(mock.project);
         }
       });
+      
       setProjects([...new Set(allProjects)].sort());
     };
 

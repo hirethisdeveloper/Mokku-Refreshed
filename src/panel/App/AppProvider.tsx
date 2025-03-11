@@ -30,7 +30,24 @@ export const AppProvider = (props: useGlobalStoreState["meta"]) => {
       <MantineProvider
         withGlobalStyles
         withNormalizeCSS
-        theme={{ colorScheme }}
+        theme={{ 
+          colorScheme,
+          components: {
+            Checkbox: {
+              styles: {
+                input: {
+                  borderColor: '#9b9b9b',
+                  '&:checked': {
+                    borderColor: '#9b9b9b',
+                  },
+                  '&:hover': {
+                    borderColor: '#9b9b9b',
+                  }
+                }
+              }
+            }
+          }
+        }}
       >
         <App {...props} />
       </MantineProvider>
