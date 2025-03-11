@@ -66,13 +66,6 @@ export const Header = () => {
             </Flex>
           </Flex>
           <Flex gap="4px" style={{ paddingRight: 4 }}>
-            <Button
-              onClick={() => setShowSupportUs(true)}
-              size="xs"
-              variant="subtle"
-            >
-              Support Mokku
-            </Button>
             <ThemeButton />
             <RefreshButton />
             <SwitchButton />
