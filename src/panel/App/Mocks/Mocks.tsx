@@ -102,12 +102,14 @@ const getSchema = ({
           stopPropagation(event);
           toggleAllMocks();
         }}
+        data-testid="mocks-table-head-selectall"
       />
     ),
     content: (data) => (
       <div
         onClick={stopPropagation}
         style={{ cursor: "pointer" }}
+        data-testid={`mock-row-select-${data.id}`}
       >
         <Checkbox
           checked={selectedMocks.has(data.id)}
@@ -115,10 +117,12 @@ const getSchema = ({
             stopPropagation(event);
             toggleMockSelection(data.id);
           }}
+          data-testid={`mock-checkbox-${data.id}`}
         />
       </div>
     ),
     width: 60,
+    testId: "mocks-table-head-select-column",
   },
   {
     header: "",
@@ -126,58 +130,67 @@ const getSchema = ({
       <div
         onClick={stopPropagation}
         style={{ cursor: "pointer" }}
+        data-testid={`mock-row-toggle-${data.id}`}
       >
         <Switch
           checked={data.active}
           onChange={(x) => {
             toggleMock({ ...data, active: x.target.checked });
           }}
+          data-testid={`mock-switch-${data.id}`}
         />
       </div>
     ),
     width: 60,
+    testId: "mocks-table-head-toggle-column",
   },
   {
     header: "Name",
     content: (data) => data.name || "",
     width: 240,
     sortKey: "name",
+    testId: "mocks-table-head-name",
   },
   {
     header: "Method",
     content: (data) => data.method,
     width: 100,
     sortKey: "method",
+    testId: "mocks-table-head-method",
   },
   {
     header: "URL",
     content: (data) => data.url,
     sortKey: "url",
+    testId: "mocks-table-head-url",
   },
   {
     header: "Tags",
     content: (data) => (
-      <Group spacing={4}>
+      <Group spacing={4} data-testid={`mock-tags-${data.id}`}>
         {data.tags?.slice().sort((a, b) => a.localeCompare(b)).map((tag, index) => (
-          <Badge key={index} size="xs" variant="light">
+          <Badge key={index} size="xs" variant="light" data-testid={`mock-tag-${data.id}-${index}`}>
             {tag}
           </Badge>
         ))}
       </Group>
     ),
     width: 200,
+    testId: "mocks-table-head-tags",
   },
   {
     header: "Status",
     content: (data) => data.status,
     width: 80,
     sortKey: "status",
+    testId: "mocks-table-head-status",
   },
   {
     header: "Delay",
     content: (data) => data.delay || 0,
     width: 120,
     sortKey: "delay",
+    testId: "mocks-table-head-delay",
   },
   {
     header: "",
@@ -186,12 +199,14 @@ const getSchema = ({
         align="center"
         gap="4px"
         onClick={stopPropagation}
+        data-testid={`mock-actions-${data.id}`}
       >
         <ActionIcon
           variant="outline"
           color="blue"
           onClick={() => editMock(data)}
           title={`Edit Mock ${data.name}`}
+          data-testid={`mock-edit-${data.id}`}
         >
           <MdOutlineModeEditOutline />
         </ActionIcon>
@@ -201,6 +216,7 @@ const getSchema = ({
           color="blue"
           onClick={() => duplicateMock(data)}
           title={`Duplicate ${data.name}`}
+          data-testid={`mock-duplicate-${data.id}`}
         >
           <MdOutlineContentCopy />
         </ActionIcon>
@@ -209,12 +225,14 @@ const getSchema = ({
           color="red"
           onClick={() => deleteMock(data)}
           title={`Delete ${data.name}`}
+          data-testid={`mock-delete-${data.id}`}
         >
           <MdDeleteOutline />
         </ActionIcon>
       </Flex>
     ),
     width: 80,
+    testId: "mocks-table-head-actions",
   },
 ];
 
@@ -541,7 +559,7 @@ const ProjectTagsModal: React.FC<ProjectTagsModalProps> = ({
   );
 };
 
-export const Mocks: React.FC = () => {
+export const Mocks: React.FC<{ "data-testid"?: string }> = ({ "data-testid": dataTestId = "mocks-component", ...props }) => {
   const { store, selectedMock, setSelectedMock, setStoreProperties } = useChromeStore(
     useMockStoreSelector,
     shallow,
@@ -754,6 +772,7 @@ export const Mocks: React.FC = () => {
       <Placeholder
         title="No Mocks created yet."
         description="Create a mock from scratch or mock a log from logs."
+        data-testid="mocks-empty-placeholder"
       />
     );
   }
@@ -763,12 +782,13 @@ export const Mocks: React.FC = () => {
       <Placeholder
         title="No matched mock."
         description="No mock is matching the current search or filter. Try searching by name, url, method, status, tags, or project. You can also use field:value format (e.g., tags:dashboard, project:api) or use the project filter dropdown."
+        data-testid="mocks-no-matches-placeholder"
       />
     );
   }
 
   return (
-    <>
+    <div data-testid={dataTestId} {...props}>
       <TableWrapper
         selectedRowId={selectedMock?.id}
         data={sortedMocks}
@@ -777,6 +797,7 @@ export const Mocks: React.FC = () => {
         sortKey={sortKey}
         sortDirection={sortDirection}
         onContextMenu={handleContextMenu}
+        data-testid="mocks-table"
       />
       
       {contextMenuPosition && rightClickedMock && (
@@ -784,21 +805,26 @@ export const Mocks: React.FC = () => {
           <div
             style={contextMenuOverlayStyle}
             onClick={handleContextMenuClose}
+            data-testid="context-menu-overlay"
           >
             <Paper
               shadow="md"
               style={contextMenuPaperStyle(contextMenuPosition)}
               onClick={(e) => e.stopPropagation()}
+              data-testid="context-menu-paper"
             >
-              <div>
+              <div data-testid="context-menu-content">
                 {/* Show count of selected items if more than one */}
                 {selectedMocks.size > 1 && (
-                  <div style={{ 
-                    padding: '8px 12px', 
-                    borderBottom: '1px solid rgba(0,0,0,0.1)',
-                    fontSize: '14px',
-                    fontWeight: 'bold'
-                  }}>
+                  <div 
+                    style={{ 
+                      padding: '8px 12px', 
+                      borderBottom: '1px solid rgba(0,0,0,0.1)',
+                      fontSize: '14px',
+                      fontWeight: 'bold'
+                    }}
+                    data-testid="context-menu-selection-count"
+                  >
                     {selectedMocks.size} items selected
                   </div>
                 )}
@@ -907,7 +933,8 @@ export const Mocks: React.FC = () => {
         onSave={bulkUpdateProjectsAndTags}
         store={store}
         setStoreProperties={setStoreProperties}
+        data-testid="project-tags-modal"
       />
-    </>
+    </div>
   );
 };

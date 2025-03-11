@@ -43,10 +43,10 @@ const useStyles = createStyles((theme) => ({
   },
 }));
 
-export const SideDrawerHeader = ({ children }: { children: ReactNode }) => {
+export const SideDrawerHeader = ({ children, "data-testid": dataTestId = "side-drawer-header", ...props }: { children: ReactNode, "data-testid"?: string }) => {
   const { classes } = useStyles();
   return (
-    <Flex justify="space-between" align="center" className={classes.header}>
+    <Flex justify="space-between" align="center" className={classes.header} data-testid={dataTestId} {...props}>
       {children}
     </Flex>
   );
@@ -55,9 +55,12 @@ export const SideDrawerHeader = ({ children }: { children: ReactNode }) => {
 export const SideDrawer = ({
   children,
   minWidth,
+  "data-testid": dataTestId = "side-drawer",
+  ...props
 }: {
   children: ReactNode;
   minWidth?: number;
+  "data-testid"?: string;
 }) => {
   const { classes } = useStyles();
   const draggerRef = useRef<HTMLDivElement>(null);
@@ -94,12 +97,13 @@ export const SideDrawer = ({
   const finalMinWidth = Math.min(minWidth, window.innerWidth - 48);
 
   return (
-    <Flex id="side-drawer" className={classes.wrapper}>
-      <div id="dragger" ref={draggerRef} className={classes.dragger} />
+    <Flex id="side-drawer" className={classes.wrapper} data-testid={dataTestId} {...props}>
+      <div id="dragger" ref={draggerRef} className={classes.dragger} data-testid={`${dataTestId}-dragger`} />
       <div
         ref={containerRef}
         className={classes.container}
         style={{ minWidth: finalMinWidth }}
+        data-testid={`${dataTestId}-container`}
       >
         {children}
       </div>

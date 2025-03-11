@@ -39,7 +39,7 @@ export const App = (props: useGlobalStoreState["meta"]) => {
   }, [colorScheme]);
 
   if (!state.active) {
-    return <DisabledPlaceholder />;
+    return <DisabledPlaceholder data-testid="disabled-placeholder" />;
   }
 
   return (
@@ -48,24 +48,25 @@ export const App = (props: useGlobalStoreState["meta"]) => {
       <Flex
         direction="column"
         style={{ minWidth: 1024, height: "100%", overflow: "hidden" }}
+        data-testid="app-container"
       >
-        <Header />
-        <div style={{ overflow: "auto", flexGrow: 2 }}>
+        <Header data-testid="app-header" />
+        <div style={{ overflow: "auto", flexGrow: 2 }} data-testid="app-content">
           <Show if={view === ViewEnum.PROJECTS}>
-            <Projects />
+            <Projects data-testid="projects-view" />
           </Show>
           <Show if={view === ViewEnum.MOCKS}>
-            <Mocks />
+            <Mocks data-testid="mocks-view" />
           </Show>
           <Show if={view === ViewEnum.LOGS}>
-            <Logs />
+            <Logs data-testid="logs-view" />
           </Show>
           <Show if={view === ViewEnum.IMPORT_EXPORT}>
-            <ImportExport />
+            <ImportExport data-testid="import-export-view" />
           </Show>
         </div>
       </Flex>
-      <Modal />
+      <Modal data-testid="app-modal" />
     </>
   );
 };
