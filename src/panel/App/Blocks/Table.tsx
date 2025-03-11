@@ -49,7 +49,6 @@ const useStyles = createStyles((theme) => ({
     position: "sticky",
     top: 0,
     borderBottom: "1px solid black",
-    zIndex: 100000,
   },
 }));
 
