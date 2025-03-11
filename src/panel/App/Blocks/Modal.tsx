@@ -56,7 +56,7 @@ export const Modal = () => {
         right: 0,
         height: "100vh",
         boxShadow: "rgba(100, 100, 111, 0.2) 0px 7px 29px 0px",
-        zIndex: 1000,
+        zIndex: 200000,
         background: "white",
       }}
     >

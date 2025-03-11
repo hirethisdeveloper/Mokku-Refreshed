@@ -7,6 +7,7 @@ const MIN_WIDTH = 240;
 const useStyles = createStyles((theme) => ({
   wrapper: {
     overflow: "auto",
+    background: theme.colorScheme === "dark" ? theme.colors.dark[7] : theme.white,
   },
   dragger: {
     flexShrink: 0,
@@ -25,6 +26,7 @@ const useStyles = createStyles((theme) => ({
     flexGrow: 2,
     height: "100%",
     minWidth: MIN_WIDTH,
+    background: theme.colorScheme === "dark" ? theme.colors.dark[7] : theme.white,
   },
   dots: {
     background: theme.colors.gray[5],
